@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=61.2"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ckanext-tour"
+version = "0.1.1"
+description = "Create an interactive tour that will help users familiarize themselves with the important features of your portal"
+authors = [
+    {name = "DataShades", email = "datashades@linkdigital.com.au"},
+    {name = "Oleksandr Cherniavskyi", email = "mutantsan@gmail.com"},
+]
+maintainers = [
+    {name = "DataShades", email = "datashades@linkdigital.com.au"},
+]
+license = {text = "AGPL"}
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: GNU Affero General Public License v3 or later (AGPLv3+)",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+keywords = ["CKAN"]
+dependencies = []
+optional-dependencies = {}
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+Homepage = "https://github.com/DataShades/ckanext-tour"
+
+[project.entry-points]
+"ckan.plugins" = {tour = "ckanext.tour.plugin:TourPlugin"}
+"babel.extractors" = {ckan = "ckan.lib.extract:extract_ckan"}
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::sqlalchemy.exc.SADeprecationWarning",
+    "ignore::sqlalchemy.exc.SAWarning",
+    "ignore::DeprecationWarning",
+]
+addopts = "--ckan-ini test.ini"
