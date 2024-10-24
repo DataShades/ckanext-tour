@@ -1,4 +1,4 @@
-[![Tests](https://github.com/mutantsan/ckanext-tour/workflows/Tests/badge.svg?branch=main)](https://github.com/mutantsan/ckanext-tour/actions)
+[![Tests](https://github.com/DataShades/ckanext-tour/workflows/Tests/badge.svg?branch=main)](https://github.com/DataShades/ckanext-tour/actions)
 
 # ckanext-tour
 
@@ -55,7 +55,7 @@ To install ckanext-tour:
 
 2. Clone the source and install it on the virtualenv
 
-    git clone https://github.com/mutantsan/ckanext-tour.git
+    git clone https://github.com/DataShades/ckanext-tour.git
     cd ckanext-tour
     pip install -e .
 	pip install -r requirements.txt
@@ -78,7 +78,7 @@ To modify the configuration of the extension, please make the changes through th
 To install `ckanext-tour` for development, activate your CKAN virtualenv and
 do:
 
-    git clone https://github.com/mutantsan/ckanext-tour.git
+    git clone https://github.com/DataShades/ckanext-tour.git
     cd ckanext-tour
     python setup.py develop
     pip install -r dev-requirements.txt
