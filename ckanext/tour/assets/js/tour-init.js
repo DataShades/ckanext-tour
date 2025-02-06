@@ -51,7 +51,7 @@ this.ckan.module('tour-init', function (jQuery) {
             var isActive = introData.state === "active";
             var showed = localStorage.getItem('intro-' + introData.id);
 
-            var shouldAttach = isActive && (!introData.page || window.location.pathname == introData.page);
+            var shouldAttach = isActive && !introData.page;
             var shouldStart = isActive && !showed && !this.isMobile && window.location.pathname == introData.page;
             var anchorExists = $(introData.anchor).length;
 

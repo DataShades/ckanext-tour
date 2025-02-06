@@ -1,3 +1,5 @@
+@use 'variables' as vars;
+
 .tour-steps {
     margin-bottom: 16px;
 
@@ -33,49 +35,62 @@
     }
 }
 
-.accordion.tour-accordion {
-    width: 100%;
+.tour-steps {
+    .accordion.tour-accordion {
+        width: 100%;
 
-    &.draggable-source--is-dragging {
-        opacity: .5;
-    }
+        &.draggable-source--is-dragging {
+            opacity: .5;
+        }
 
-    .accordion-header {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        .accordion-item {
+            .accordion-header {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                padding: 6px;
+                background-color: #F5F5F5;
 
-        .accordion-header--text {
-            margin-right: auto;
+                .accordion-header--text {
+                    margin-right: auto;
+                    display: flex;
+                    align-items: center;
+                    font-size: 14px;
 
-            .step-number {
-                border: 1px solid var(--ap-color);
-                color: var(--ap-color);
-                padding: 5px 11px;
-                border-radius: 50%;
+                    .step-number {
+                        margin-inline-end: 0.5rem;
+                    }
+                }
+
+                .dragger {
+                    height: 38px;
+                    width: 22px;
+                    display: flex;
+                    text-align: center;
+                    align-items: center;
+                    justify-content: center;
+                    cursor: grab;
+                }
+
+                .accordion-button {
+                    width: fit-content;
+                    padding: 0 !important;
+
+                    &:after {
+                        background-size: 22px;
+                        margin: 0 1rem;
+                    }
+                }
             }
-        }
 
-        .dragger {
-            height: 38px;
-            width: 38px;
-            display: flex;
-            text-align: center;
-            align-items: center;
-            justify-content: center;
-            cursor: grab;
-        }
-
-        .accordion-button {
-            width: fit-content;
-            padding: 0.5rem;
-        }
-
-        .remove-step {
-            height: 38px;
+            .accordion-body {
+                padding: 24px;
+                background: vars.$white;
+            }
         }
     }
 }
+
 
 
 // ShepherdJS
@@ -87,13 +102,13 @@
     max-width: 300px;
 
     .shepherd-arrow:before {
-        background-color: $white !important;
+        background-color: vars.$white !important;
     }
 
     .shepherd-content {
 
         .shepherd-header {
-            background-color: $white;
+            background-color: vars.$white;
 
             h3 {
                 font-weight: bold;
@@ -145,7 +160,7 @@
 
             button {
                 margin: 0;
-                color: $black;
+                color: vars.$black;
                 padding: 0.5rem 1rem;
                 border: 1px solid #bdbdbd;
                 text-decoration: none;

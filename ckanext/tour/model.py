@@ -197,7 +197,7 @@ class TourStepImage(tk.BaseModel):
             "file_id": self.file_id,
             "tour_step_id": self.tour_step_id,
             "uploaded_at": self.uploaded_at.isoformat(),
-            "url": uploaded_file["url"] if uploaded_file else self.url,
+            "url": uploaded_file["href"] if uploaded_file else self.url,
         }
 
     def delete(self, with_file: bool = False) -> None:
@@ -215,11 +215,9 @@ class TourStepImage(tk.BaseModel):
 
     def get_file_data(self, file_id: str) -> dict[str, Any]:
         """Return a real uploaded file data"""
-        try:
-            result = tk.get_action("files_file_show")(
-                {"ignore_auth": True}, {"id": file_id}
-            )
-        except tk.ObjectNotFound:
+        result = tk.h.files_link_details(file_id)
+
+        if not result:
             return {}
 
         return result

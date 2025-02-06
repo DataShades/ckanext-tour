@@ -25,41 +25,48 @@
   margin-bottom: 0;
 }
 
-.accordion.tour-accordion {
+.tour-steps .accordion.tour-accordion {
   width: 100%;
 }
-.accordion.tour-accordion.draggable-source--is-dragging {
+.tour-steps .accordion.tour-accordion.draggable-source--is-dragging {
   opacity: 0.5;
 }
-.accordion.tour-accordion .accordion-header {
+.tour-steps .accordion.tour-accordion .accordion-item .accordion-header {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 6px;
+  background-color: #F5F5F5;
 }
-.accordion.tour-accordion .accordion-header .accordion-header--text {
+.tour-steps .accordion.tour-accordion .accordion-item .accordion-header .accordion-header--text {
   margin-right: auto;
+  display: flex;
+  align-items: center;
+  font-size: 14px;
 }
-.accordion.tour-accordion .accordion-header .accordion-header--text .step-number {
-  border: 1px solid var(--ap-color);
-  color: var(--ap-color);
-  padding: 5px 11px;
-  border-radius: 50%;
+.tour-steps .accordion.tour-accordion .accordion-item .accordion-header .accordion-header--text .step-number {
+  margin-inline-end: 0.5rem;
 }
-.accordion.tour-accordion .accordion-header .dragger {
+.tour-steps .accordion.tour-accordion .accordion-item .accordion-header .dragger {
   height: 38px;
-  width: 38px;
+  width: 22px;
   display: flex;
   text-align: center;
   align-items: center;
   justify-content: center;
   cursor: grab;
 }
-.accordion.tour-accordion .accordion-header .accordion-button {
+.tour-steps .accordion.tour-accordion .accordion-item .accordion-header .accordion-button {
   width: fit-content;
-  padding: 0.5rem;
+  padding: 0 !important;
 }
-.accordion.tour-accordion .accordion-header .remove-step {
-  height: 38px;
+.tour-steps .accordion.tour-accordion .accordion-item .accordion-header .accordion-button:after {
+  background-size: 22px;
+  margin: 0 1rem;
+}
+.tour-steps .accordion.tour-accordion .accordion-item .accordion-body {
+  padding: 24px;
+  background: white;
 }
 
 .shepherd-modal-overlay-container.shepherd-modal-is-visible {

@@ -3,11 +3,11 @@
 {% set collapse_step = h.tour_collapse_steps() %}
 
 <form action="{{ form_action }}" method="POST" enctype="multipart/form-data">
-    {% call form.input("title", label=_("Tour title"), value=data.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}) %}
+    {% call form.input("title", label=_("Tour title"), value=data.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
         {{ form.info(_("A tour title to explain what is it for")) }}
     {% endcall %}
 
-    {% call form.input("anchor", label=_("Query anchor"), value=".breadcrumb .active" or data.anchor, error=errors.anchor) %}
+    {% call form.input("anchor", label=_("Query anchor"), value=".breadcrumb .active" or data.anchor, error=errors.anchor, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
         {{ form.info(_('An anchor element query that will trigger the tour. Could be a tooltip, button or any HTML element.', classes=['info-help-tight'])) }}
     {% endcall %}
 
@@ -15,19 +15,20 @@
         {{ form.info(_('Optional. A path to a page, where tour will be applied. Note, that a page tour will be triggered automatically.', classes=['info-help-tight'])) }}
     {% endcall %}
 
-    <div class="form-actions js-form-wrapper form-wrapper">
+    <div class="form-actions js-form-wrapper form-wrapper mb-2">
+        <p class="m-0 me-auto d-flex align-items-center"><b>{{ _("Tour steps:") }}</b></p>
+
         <button class="btn btn-primary" type="submit">{{ _("Create tour") if is_create else _("Update tour") }}</button>
-        <button class="btn btn-black btn-collapse-steps" {% if collapse_step %}collapsed=1{% endif %}>
+        <button class="btn btn-outline-secondary btn-collapse-steps" {% if collapse_step %}collapsed=1{% endif %} type="button">
             {{ _("Expand all steps") if collapse_step else _("Collapse all steps") }}
         </button>
-        <button class="add-step btn btn-success" hx-trigger="click" hx-post="{{ h.url_for('tour.add_step') }}"
+        <button class="add-step btn btn-outline-secondary" hx-trigger="click" hx-post="{{ h.url_for('tour.add_step') }}" type="button"
             hx-vals='' hx-swap="outerHTML" hx-target=".next-tour">
-            {{ _("Add step") }}
             <i class="fa fa-plus"></i>
+            {{ _("Add step") }}
         </button>
     </div>
 
-    <h3>{{ _("Tour steps:") }}</h3>
     <div class="tour-steps" data-module="tour-steps tour-htmx">
         <div class="tour-steps__steps">
 

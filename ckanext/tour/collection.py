@@ -30,6 +30,7 @@ def tour_row_dictizer(serializer: ApHtmxTableSerializer, row: Tour):
 
 class TourListCollection(ApCollection):
     SerializerFactory = ApHtmxTableSerializer.with_attributes(
+        record_template="tour/record.html",
         row_dictizer=tour_row_dictizer
     )
 
@@ -96,29 +97,7 @@ class TourListCollection(ApCollection):
                         {"value": "3", "text": "Remove selected tour(s)"},
                     ],
                 },
-            ),
-            RowAction(
-                name="view",
-                type="row_action",
-                options={
-                    "endpoint": "tour.delete",
-                    "label": "Delete",
-                    "params": {
-                        "tour_id": "$id",
-                    },
-                },
-            ),
-            RowAction(
-                name="view",
-                type="row_action",
-                options={
-                    "endpoint": "tour.edit",
-                    "label": "Edit",
-                    "params": {
-                        "tour_id": "$id",
-                    },
-                },
-            ),
+            )
         ],
         static_filters=[
             InputFilter(

@@ -11,21 +11,28 @@
     <div class="accordion-item">
         <h3 class="accordion-header" id="step-header-{{ step_id }}">
             <div class="accordion-header--text">
+                <span class="dragger">
+                    {% snippet 'snippets/svg/drag.svg' %}
+                </span>
                <span class="step-number">{{ step_index or 0 }}</span> {{ _("Step") }}
             </div>
-            <span class="dragger">
-                {% snippet 'snippets/svg/drag.svg' %}
-            </span>
-            <button class="accordion-button {% if collapse_step %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ step_id }}"
-                aria-expanded="true" aria-controls="collapse-{{ step_id }}">
-            </button>
+
             <button
                 class="remove-step btn btn-danger"
                 data-step-id="{{ step_id }}"
                 hx-trigger="click"
                 hx-post="{{ h.url_for('tour.delete_step', tour_step_id=step_id) }}"
                 >
-                {{ _("Delete") }}
+                {{ _("Delete step") }}
+            </button>
+
+            <button
+                class="accordion-button {% if collapse_step %}collapsed{% endif %}"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#collapse-{{ step_id }}"
+                aria-expanded="true"
+                aria-controls="collapse-{{ step_id }}">
             </button>
         </h3>
         <div id="collapse-{{ step_id }}" class="accordion-collapse collapse {% if not collapse_step %}show{% endif %}" aria-labelledby="step-header-{{ step_id }}"

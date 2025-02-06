@@ -1,0 +1,21 @@
+{% extends "collection/serialize/ap_htmx_table/record.html" %}
+
+{% block value %}
+    {% if column == "row_actions" %}
+        <a
+            href="{{ h.url_for('tour.delete', tour_id=data.id) }}"
+            title="{{ _('Delete')}}"
+            class="btn btn-danger btn-square">
+            <i class="fas fa-trash"></i>
+        </a>
+
+        <a
+            href="{{ h.url_for('tour.edit', tour_id=data.id) }}"
+            title="{{ _('Edit')}}"
+            class="btn btn-primary btn-square">
+            <i class="fas fa-edit"></i>
+        </a>
+    {% else %}
+        {{ super() }}
+    {% endif %}
+{% endblock value %}
