@@ -1,27 +1,28 @@
 from __future__ import annotations
 
-from datetime import datetime as dt
 from typing import Any, cast
 
-import ckan.model as model
 import ckan.plugins.toolkit as tk
+from ckan import model, types
 from ckan.logic import validate
 
-import ckanext.tour.logic.schema as schema
-from ckanext.tour.model import Tour, TourStep, TourStepImage
+from ckanext.tour.logic import schema
+from ckanext.tour.model import Tour, TourStep
 
 
 @tk.side_effect_free
 @validate(schema.tour_show)
-def tour_show(context, data_dict):
+def tour_show(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
     tk.check_access("tour_show", context, data_dict)
 
-    return Tour.get(data_dict["id"]).dictize(context)  # type: ignore
+    return cast(Tour, Tour.get(data_dict["id"])).dictize(context)
 
 
 @tk.side_effect_free
 @validate(schema.tour_list)
-def tour_list(context, data_dict):
+def tour_list(
+    context: types.Context, data_dict: types.DataDict
+) -> list[dict[str, Any]]:
     """Return a list of tours from database"""
     tk.check_access("tour_list", context, data_dict)
 
@@ -36,8 +37,8 @@ def tour_list(context, data_dict):
 
 
 @validate(schema.tour_create)
-def tour_create(context, data_dict):
-    tk.check_access("tour_create", context, data_dict)
+def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
+    tk.check_access("tour_manage", context, data_dict)
 
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
     tour = Tour.create(data_dict)
@@ -56,14 +57,14 @@ def tour_create(context, data_dict):
                 {"id": tour.id},
             )
 
-            raise tk.ValidationError(e.error_dict if e else {})
+            raise tk.ValidationError(e.error_dict if e else {}) from e
 
     return tour.dictize(context)
 
 
 @validate(schema.tour_remove)
-def tour_remove(context, data_dict):
-    tk.check_access("tour_remove", context, data_dict)
+def tour_remove(context: types.Context, data_dict: types.DataDict) -> bool:
+    tk.check_access("tour_manage", context, data_dict)
 
     tour = cast(Tour, Tour.get(data_dict["id"]))
 
@@ -72,45 +73,14 @@ def tour_remove(context, data_dict):
 
     tour.delete()
 
-    context["session"].commit()
+    model.Session.commit()
 
     return True
 
 
-@validate(schema.tour_step_schema)
-def tour_step_create(context, data_dict):
-    tk.check_access("tour_create", context, data_dict)
-
-    images = data_dict.pop("image", [])
-
-    if len(images) > 1:
-        raise tk.ValidationError({"image": "only 1 image for step allowed"})
-
-    tour = cast(Tour, Tour.get(data_dict["tour_id"]))
-    data_dict["index"] = len(tour.steps) + 1
-    tour_step = TourStep.create(data_dict)
-
-    for image in images:
-        try:
-            tk.get_action("tour_step_image_upload")(
-                {"ignore_auth": True},
-                {
-                    "upload": image.get("upload"),
-                    "url": image.get("url"),
-                    "tour_step_id": tour_step.id,
-                },
-            )
-        except tk.ValidationError as e:
-            raise tk.ValidationError(
-                {"image": [f"Error while uploading step image: {e}"]}
-            )
-
-    return tour_step.dictize(context)
-
-
 @validate(schema.tour_update)
-def tour_update(context, data_dict):
-    tk.check_access("tour_update", context, data_dict)
+def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
+    tk.check_access("tour_manage", context, data_dict)
 
     tour = cast(Tour, Tour.get(data_dict["id"]))
 
@@ -119,58 +89,88 @@ def tour_update(context, data_dict):
     tour.page = data_dict.get("page", tour.page)
     tour.state = data_dict.get("state", tour.page)
 
-    model.Session.commit()
-
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
 
     for step in steps:
+        print(step)
         action = "tour_step_update" if step.get("id") else "tour_step_create"
         step["tour_id"] = tour.id
 
         try:
             tk.get_action(action)({"ignore_auth": True}, step)
         except tk.ValidationError as e:
-            raise tk.ValidationError(e.error_dict)
+            raise tk.ValidationError(e.error_dict) from e
+
+    model.Session.commit()
+
     return tour.dictize(context)
 
 
+@validate(schema.tour_step_schema)
+def tour_step_create(
+    context: types.Context, data_dict: types.DataDict
+) -> dict[str, Any]:
+    tk.check_access("tour_manage", context, data_dict)
+
+    image_id = _upload_step_image(data_dict)
+
+    if image_id:
+        data_dict["image_id"] = image_id
+
+    tour = cast(Tour, Tour.get(data_dict["tour_id"]))
+    data_dict["index"] = len(tour.steps) + 1
+    tour_step = TourStep.create(data_dict)
+
+    return tour_step.dictize(context)
+
+
+def _upload_step_image(data_dict: dict[str, Any]) -> str | None:
+    image_upload = data_dict.pop("image_upload", None)
+    image_url = data_dict.pop("image_url", None)
+
+    if not image_upload and not image_url:
+        return None
+
+    if image_upload and image_url:
+        raise tk.ValidationError(
+            {"image": "Please provide either an image URL or upload a file, not both."}
+        )
+
+    result = tk.get_action("files_file_create")(
+        {"ignore_auth": True},
+        {
+            "upload": image_upload or image_url,
+            "storage": "tour_image" if image_upload else "tour_link",
+        },
+    )
+
+    return result["id"]
+
+
 @validate(schema.tour_step_update)
-def tour_step_update(context, data_dict):
-    tk.check_access("tour_step_update", context, data_dict)
+def tour_step_update(
+    context: types.Context, data_dict: types.DataDict
+) -> dict[str, Any]:
+    tk.check_access("tour_manage", context, data_dict)
+
+    image_id = _upload_step_image(data_dict)
 
     tour_step = cast(TourStep, TourStep.get(data_dict["id"]))
 
-    tour_step.index = int(data_dict.get("index")) or tour_step.index
+    tour_step.index = data_dict.get("index") or tour_step.index
     tour_step.title = data_dict["title"]
     tour_step.element = data_dict["element"]
     tour_step.intro = data_dict["intro"]
     tour_step.position = data_dict["position"]
-
-    if data_dict["clear"] and tour_step.image:
-        tk.get_action("tour_step_image_remove")(
-            {"ignore_auth": True}, {"id": tour_step.image.id}
-        )
-    elif data_dict.get("image"):
-        data_dict["image"][0]["tour_step_id"] = tour_step.id
-
-        try:
-            tk.get_action(
-                "tour_step_image_update"
-                if tour_step.image
-                else "tour_step_image_upload"
-            )({"ignore_auth": True}, data_dict["image"][0])
-        except tk.ValidationError as e:
-            raise tk.ValidationError(
-                {"image": [f"Error while uploading step image: {e}"]}
-            )
-
-    # model.Session.commit()
+    tour_step.image_id = image_id or data_dict.get("image_id", tour_step.image_id)
 
     return tour_step.dictize(context)
 
 
 @validate(schema.tour_step_remove)
-def tour_step_remove(context, data_dict):
+def tour_step_remove(context: types.Context, data_dict: types.DataDict) -> bool:
+    tk.check_access("tour_manage", context, data_dict)
+
     tour_step = cast(TourStep, TourStep.get(data_dict["id"]))
 
     tour_step.delete()
@@ -179,76 +179,31 @@ def tour_step_remove(context, data_dict):
     return True
 
 
-@validate(schema.tour_step_image_schema)
-def tour_step_image_upload(context, data_dict):
-    tour_step_id = data_dict.pop("tour_step_id", None)
+@validate(schema.tour_upload_storage)
+def tour_upload_image(
+    context: types.Context, data_dict: types.DataDict
+) -> dict[str, Any]:
+    tk.check_access("tour_manage", context, data_dict)
 
-    if not any([data_dict.get("upload"), data_dict.get("url")]):
-        raise tk.ValidationError(tk._("You have to provide either file or URL"))
-
-    if not data_dict.get("upload"):
-        return TourStepImage.create(
-            {"url": data_dict["url"], "tour_step_id": tour_step_id}
-        ).dictize(context)
-
-    try:
-        result = tk.get_action("files_file_create")(
-            {"ignore_auth": True},
-            {
-                "name": f"Tour step image <{tour_step_id}>",
-                "upload": data_dict["upload"],
-            },
-        )
-    except OSError as e:
-        raise tk.ValidationError(str(e))
-
-    data_dict["file_id"] = result["id"]
-
-    return TourStepImage.create(
-        {"file_id": result["id"], "tour_step_id": tour_step_id}
-    ).dictize(context)
-
-
-@validate(schema.tour_step_image_update_schema)
-def tour_step_image_update(context, data_dict):
-    tk.check_access("tour_step_update", context, data_dict)
-
-    if not any([data_dict.get("upload"), data_dict.get("url")]):
-        raise tk.ValidationError(tk._("You have to provide either file or URL"))
-
-    tour_step_image = cast(
-        TourStepImage,
-        TourStepImage.get_by_step(data_dict["tour_step_id"]),
+    return tk.get_action("files_file_create")(
+        {"ignore_auth": True},
+        {
+            "upload": data_dict["upload"],
+            "storage": "tour_image",
+        },
     )
 
-    if not data_dict.get("upload"):
-        tour_step_image.url = data_dict["url"]
-        model.Session.commit()
-        return tour_step_image.dictize(context)
 
-    try:
-        result = tk.get_action("files_file_create")(
-            {"ignore_auth": True},
-            {
-                "name": f"Tour step image <{data_dict['tour_step_id']}>",
-                "upload": data_dict["upload"],
-            },
-        )
-    except (tk.ValidationError, OSError) as e:
-        raise tk.ValidationError(str(e))
+@validate(schema.tour_upload_storage)
+def tour_upload_link(
+    context: types.Context, data_dict: types.DataDict
+) -> dict[str, Any]:
+    tk.check_access("tour_manage", context, data_dict)
 
-    tour_step_image.url = result["url"]
-
-    model.Session.commit()
-
-    return tour_step_image.dictize(context)
-
-
-@validate(schema.tour_step_image_remove_schema)
-def tour_step_image_remove(context, data_dict):
-    tour_step_image = cast(TourStepImage, TourStepImage.get(data_dict["id"]))
-
-    tour_step_image.delete(with_file=bool(tour_step_image.file_id))
-    model.Session.commit()
-
-    return True
+    return tk.get_action("files_file_create")(
+        {"ignore_auth": True},
+        {
+            "upload": data_dict["upload"],
+            "storage": "tour_link",
+        },
+    )

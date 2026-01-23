@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import json
 import uuid
-from typing import Any
 
-import ckanext.tour.config as config
+from ckanext.tour import config
 from ckanext.tour.model import TourStep
 
 

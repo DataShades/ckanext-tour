@@ -3,11 +3,13 @@
 {% set collapse_step = h.tour_collapse_steps() %}
 
 <form action="{{ form_action }}" method="POST" enctype="multipart/form-data">
+    {{ h.csrf_input() }}
+
     {% call form.input("title", label=_("Tour title"), value=data.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
         {{ form.info(_("A tour title to explain what is it for")) }}
     {% endcall %}
 
-    {% call form.input("anchor", label=_("Query anchor"), value=".breadcrumb .active" or data.anchor, error=errors.anchor, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
+    {% call form.input("anchor", label=_("Query anchor"), value=data.anchor or ".breadcrumb .active", error=errors.anchor, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
         {{ form.info(_('An anchor element query that will trigger the tour. Could be a tooltip, button or any HTML element.', classes=['info-help-tight'])) }}
     {% endcall %}
 

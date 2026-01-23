@@ -1,6 +1,6 @@
 scheming_version: 2
 schema_id: tour_config
-about: Configuration options for the DOI extension
+about: Configuration options for the tour extension
 
 fields:
   - field_name: ckanext.tour.autoplay

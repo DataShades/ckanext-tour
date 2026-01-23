@@ -5,6 +5,7 @@ Revises:
 Create Date: 2023-07-23 13:20:58.129326
 
 """
+
 import sqlalchemy as sa
 from alembic import op
 
@@ -51,29 +52,11 @@ def upgrade():
         sa.Column("element", sa.Text),
         sa.Column("intro", sa.Text),
         sa.Column("position", sa.Text),
+        sa.Column("image_id", sa.Text, nullable=True),
         sa.Column(
             "tour_id",
             sa.Text,
             sa.ForeignKey("tour.id", ondelete="CASCADE"),
-            primary_key=True,
-        ),
-    )
-
-    op.create_table(
-        "tour_step_image",
-        sa.Column("id", sa.Text, primary_key=True, unique=True),
-        sa.Column("file_id", sa.Text, unique=True, nullable=True),
-        sa.Column("url", sa.Text, nullable=True),
-        sa.Column(
-            "uploaded_at",
-            sa.DateTime,
-            nullable=False,
-            server_default=sa.func.current_timestamp(),
-        ),
-        sa.Column(
-            "tour_step_id",
-            sa.Text,
-            sa.ForeignKey("tour_step.id", ondelete="CASCADE"),
             primary_key=True,
         ),
     )
@@ -87,20 +70,9 @@ def upgrade():
         ondelete="CASCADE",
     )
 
-    op.create_foreign_key(
-        "tour_step_image_fk",
-        "tour_step_image",
-        "tour_step",
-        ["tour_step_id"],
-        ["id"],
-        ondelete="CASCADE",
-    )
-
 
 def downgrade():
     op.drop_constraint("tour_step_fk", "tour_step", type_="foreignkey")
-    op.drop_constraint("tour_step_image_fk", "tour_step_image", type_="foreignkey")
 
-    op.drop_table("tour_step_image")
     op.drop_table("tour_step")
     op.drop_table("tour")

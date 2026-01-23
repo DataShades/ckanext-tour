@@ -1,8 +1,11 @@
 from __future__ import annotations
 
-import ckan.plugins.toolkit as tk
+import contextlib
+
 from flask import Blueprint, Response
 from flask.views import MethodView
+
+import ckan.plugins.toolkit as tk
 
 from ckanext.ap_main.utils import ap_before_request
 
@@ -28,9 +31,7 @@ class TourDeleteView(MethodView):
 
 class TourStepDeleteView(MethodView):
     def post(self, tour_step_id: str) -> str:
-        try:
+        with contextlib.suppress(tk.ValidationError):
             tk.get_action("tour_step_remove")({}, {"id": tour_step_id})
-        except tk.ValidationError:
-            pass
 
         return ""

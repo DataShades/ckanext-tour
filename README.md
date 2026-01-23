@@ -20,7 +20,7 @@ Each step contains next information:
 - Query: Query to specify which element we're highlighting
 - Intro: Text, that will be displayed on a step card
 - Position: Specifies the placement of step card (top, right, bottom, left).
-- Image: Visuals to complement the text, illustrate points, or add visual interest. GIF animation could be used here.
+- Image (Optional): Visuals to complement the text, illustrate points, or add visual interest. GIF animation could be used here.
 
 ### Create Tour
 
@@ -50,46 +50,49 @@ Compatibility with core CKAN versions:
 To install ckanext-tour:
 
 1. Activate your CKAN virtual environment, for example:
-
-     . /usr/lib/ckan/default/bin/activate
-
+    ```sh
+    . /usr/lib/ckan/default/bin/activate
+    ```
 2. Clone the source and install it on the virtualenv
-
+    ```sh
     git clone https://github.com/DataShades/ckanext-tour.git
     cd ckanext-tour
     pip install -e .
-	pip install -r requirements.txt
-
+    ```
 3. Add `tour` to the `ckan.plugins` setting in your CKAN
    config file (by default the config file is located at
    `/etc/ckan/default/ckan.ini`).
 
 4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
 
-     sudo service apache2 reload
+     `sudo service apache2 reload`
 
+### Configuring File Storage
+
+To store tour images, you need to configure file storage for the extension. Add the following settings to your `ckan.ini` file:
+
+```ini
+ckanext.files.storage.tour_image.type = files:public_fs
+ckanext.files.storage.tour_image.path = %(ckan.storage_path)s/storage/tours
+ckanext.files.storage.tour_image.initialize = true
+ckanext.files.storage.tour_image.public_prefix = /tours
+ckanext.files.storage.tour_image.max_size = 10MiB
+ckanext.files.storage.tour_image.supported_types = image
+
+ckanext.files.storage.tour_link.type = files:link
+ckanext.files.storage.tour_link.timeout = 5
+```
 
 ## Config settings
 
 To modify the configuration of the extension, please make the changes through the site's user interface.
 
-## Developer installation
-
-To install `ckanext-tour` for development, activate your CKAN virtualenv and
-do:
-
-    git clone https://github.com/DataShades/ckanext-tour.git
-    cd ckanext-tour
-    python setup.py develop
-    pip install -r dev-requirements.txt
-
-
 ## Tests
 
 To run the tests, do:
-
-    pytest --ckan-ini=test.ini
-
+```sh
+pytest --ckan-ini=test.ini
+```
 
 ## License
 

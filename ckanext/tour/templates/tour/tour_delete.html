@@ -1,4 +1,4 @@
-{% extends 'admin_panel/base.html' %}
+{% extends 'tour/tour_base.html' %}
 
 {% import 'macros/form.html' as form %}
 
@@ -6,7 +6,7 @@
     <li class="active">{% link_for _("Tour delete"), named_route='tour.delete', tour_id=tour_id %}</li>
 {% endblock breadcrumb_content %}
 
-{% block ap_content %}
+{% block page_content %}
     <form action="{{ h.url_for('tour.delete', tour_id=tour_id) }}" method="post">
         <p>{{ _("This action cannot be undone.") }}</p>
 
@@ -15,4 +15,4 @@
         <button type="submit" class="btn btn-danger">{{ _("Delete") }}</button>
         <a href="{{ h.url_for('tour.list') }}" class="btn btn-primary">{{ _("Cancel") }}</a>
     </form>
-{% endblock ap_content %}
+{% endblock page_content %}

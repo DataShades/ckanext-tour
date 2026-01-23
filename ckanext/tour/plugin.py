@@ -1,16 +1,10 @@
 from __future__ import annotations
 
-from typing import Literal
-
-import ckan.types as types
-import ckan.plugins as plugins
+from ckan import plugins
 import ckan.plugins.toolkit as tk
-
-from ckanext.collection.interfaces import ICollection, CollectionFactory
+from ckan import types
 
 from ckanext.ap_main.types import ConfigurationItem, SectionConfig
-
-from ckanext.tour.collection import TourListCollection
 
 
 @tk.blanket.helpers
@@ -21,7 +15,6 @@ from ckanext.tour.collection import TourListCollection
 @tk.blanket.config_declarations
 class TourPlugin(plugins.SingletonPlugin):
     plugins.implements(plugins.IConfigurer)
-    plugins.implements(ICollection, inherit=True)
     plugins.implements(plugins.ISignal)
 
     # IConfigurer
@@ -35,18 +28,9 @@ class TourPlugin(plugins.SingletonPlugin):
 
     def get_signal_subscriptions(self) -> types.SignalMapping:
         return {
-            tk.signals.ckanext.signal("ap_main:collect_config_sections"): [
-                self.collect_config_sections_subs
-            ],
-            tk.signals.ckanext.signal("ap_main:collect_config_schemas"): [
-                self.collect_config_schemas_subs
-            ],
+            tk.signals.ckanext.signal("ap_main:collect_config_sections"): [self.collect_config_sections_subs],
+            tk.signals.ckanext.signal("ap_main:collect_config_schemas"): [self.collect_config_schemas_subs],
         }
-
-    # ICollection
-
-    def get_collection_factories(self) -> dict[str, CollectionFactory]:
-        return {"tour-list": TourListCollection}
 
     @staticmethod
     def collect_config_sections_subs(sender: None):

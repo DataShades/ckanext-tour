@@ -1,5 +1,4 @@
 {% import 'macros/form.html' as form %}
-{% from "tour/snippets/tour_image_upload.html" import image_upload %}
 
 {% set step_id = step.step_id or step.id or h.tour_random_step_id() %}
 
@@ -54,7 +53,21 @@
 
                     {{ form.select('step_position', label=_('Position'), options=h.tour_get_position_options(), selected=step.step_position or step.position, error=errors.position) }}
 
-                    {{ image_upload(step, scope="#step-" + step_id) }}
+                    {% snippet "scheming/form_snippets/files_upload_widget.html",
+                        field={
+                            'field_name': 'step_image_id',
+                            'label': _('Image'),
+                            'accept': 'image/*',
+                            'form_attrs': {
+                                'data-module-disable-media': 0,
+                                'data-module-max-files': 1,
+                                'data-module-upload-action': 'tour_upload_image',
+                                'data-module-upload-link-action': 'tour_upload_link',
+                            }
+                        },
+                        data={'step_image_id': step.image_id}
+                    %}
+
                 </fieldset>
             </div>
         </div>

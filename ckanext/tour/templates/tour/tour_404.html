@@ -1,4 +1,4 @@
-{% extends 'admin_panel/base.html' %}
+{% extends 'tour/tour_base.html' %}
 
 {% import 'macros/form.html' as form %}
 
@@ -6,6 +6,10 @@
     <li class="active">{% link_for _("Tour 404"), named_route='tour.list' %}</li>
 {% endblock breadcrumb_content %}
 
-{% block ap_content %}
-    <p style="font-size: 70px">{{ _("TOUR NOT FOUND - 404") }}</p>
-{% endblock ap_content %}
+{% block page_content %}
+    <h3>
+        {{ _("404") }}
+        <i class="fa fa-exclamation-triangle text-warning" aria-hidden="true"></i>
+    </h3>
+    <p>{{ _("The tour you are looking for does not exist.") }}</p>
+{% endblock page_content %}

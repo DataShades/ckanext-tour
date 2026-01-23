@@ -3,13 +3,13 @@ tour-js:
   output: ckanext-tour/%(version)s-tour.js
   contents:
     - js/vendor/shepherd.min.js
+    - js/vendor/driver.js.iife.min.js
     - js/vendor/bodyScrollLock.min.js
     - js/vendor/mobile-detect.min.js
     - js/vendor/floating-ui.core.umd.js
 
     - js/tour-init.js
     - js/tour-steps.js
-    - js/tour-image-upload.js
 
 tour-css:
   filter: cssrewrite

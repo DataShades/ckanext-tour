@@ -127,10 +127,9 @@ this.ckan.module('tour-init', function (jQuery) {
                 let lastButtonText = isLast ? this._("Done") : "→";
                 let firstButtonClasses = isFirst ? 'shepherd-back disabled' : 'shepherd-back';
 
-                if (step.image) {
-                    step.text = step.intro + "<br><br>" + $("<img />", {
-                        src: step.image.url
-                    })[0].outerHTML;
+                if (step.image_url) {
+                    const imageData = $("<img />", {src: step.image_url})[0].outerHTML;
+                    step.text = step.intro + "<br><br>" + imageData;
                 } else {
                     step.text = step.intro;
                 }

@@ -1,5 +1,6 @@
-import ckan.plugins.toolkit as tk
 import pytest
+
+import ckan.plugins.toolkit as tk
 from ckan.tests.helpers import call_action
 
 import ckanext.tour.model as tour_model
@@ -49,15 +50,11 @@ class TestTourStepCreate:
 
         assert tour_step_factory(tour_id=tour["id"], image=[tour_image_data()])
 
-    def test_upload_multiple_image(
-        self, tour_factory, tour_step_factory, tour_image_data
-    ):
+    def test_upload_multiple_image(self, tour_factory, tour_step_factory, tour_image_data):
         tour = tour_factory(steps=[])
 
         with pytest.raises(tk.ValidationError, match="only 1 image for step allowed"):
-            tour_step_factory(
-                tour_id=tour["id"], image=[tour_image_data(), tour_image_data()]
-            )
+            tour_step_factory(tour_id=tour["id"], image=[tour_image_data(), tour_image_data()])
 
     def test_missing_element(self, tour_factory, tour_step_factory, tour_image_data):
         tour = tour_factory(steps=[])
@@ -66,11 +63,13 @@ class TestTourStepCreate:
             tour_step_factory(tour_id=tour["id"], element=None)
 
     def test_error_on_child_should_clear_parent(self, sysadmin):
-        """When we are creating from the UI, we are passing all the tour data at
+        """Test error on creating step should not create the tour.
+
+        When we are creating from the UI, we are passing all the tour data at
         once and if something is wrong, do not create anything.
 
-        TODO: currently I wasn't able to check if something is wrong with Image data"""
-
+        TODO: currently I wasn't able to check if something is wrong with Image data
+        """
         with pytest.raises(tk.ValidationError):
             call_action(
                 "tour_create",
@@ -172,11 +171,14 @@ class TestTourList:
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestStepImageCreate:
-    """Each step could have 1 image. It could be created either from uploaded file,
-    or by URL"""
+    """Each step could have 1 image.
+
+    It could be created either from uploaded file, or by URL
+    """
 
     def test_create_from_url(self, tour_step, tour_step_image_factory):
         """You should be able to create a step image entity from a URL.
+
         We are not checking that this URL somehow related to an image, it's up
         to user
 
@@ -184,24 +186,22 @@ class TestStepImageCreate:
         the URL will be a filename which is obviosly not a valid URL.
 
         """
-        image_from_url = tour_step_image_factory(
-            tour_step_id=tour_step["id"], url="https://image.url", upload=None
-        )
+        image_from_url = tour_step_image_factory(tour_step_id=tour_step["id"], url="https://image.url", upload=None)
 
         assert not image_from_url["file_id"]
         assert image_from_url["url"] == "https://image.url"
 
     def test_create_from_file(self, tour_step, tour_step_image_factory):
         """You should be able to create a step image entity from a real file.
-        The factory has a mock file object by default."""
+
+        The factory has a mock file object by default.
+        """
         image_from_file = tour_step_image_factory(tour_step_id=tour_step["id"])
 
         assert image_from_file["file_id"]
         assert image_from_file["url"]
 
     def test_create_from_nothing(self, tour_step, tour_step_image_factory):
-        """You have to provide at least 1 source of image"""
-        with pytest.raises(
-            tk.ValidationError, match="You have to provide either file or URL"
-        ):
+        """You have to provide at least 1 source of image."""
+        with pytest.raises(tk.ValidationError, match="You have to provide either file or URL"):
             tour_step_image_factory(tour_step_id=tour_step["id"], url=None, upload=None)

@@ -1,15 +1,13 @@
-{% extends 'admin_panel/base.html' %}
-
-{% import 'macros/form.html' as form %}
+{% extends 'tour/tour_base.html' %}
 
 {% block breadcrumb_content %}
     <li>{% link_for _("Tour list"), named_route='tour.list' %}</li>
     <li class="active">{% link_for _("Tour add"), named_route='tour.add' %}</li>
 {% endblock breadcrumb_content %}
 
-{% block ap_content %}
+{% block page_content %}
     {% snippet 'tour/snippets/tour_form.html', data=data, errors=errors, form_action=h.url_for('tour.add'), is_create=True %}
-{% endblock ap_content %}
+{% endblock page_content %}
 
 {% block scripts %}
     {{ super() }}

@@ -1,10 +1,11 @@
 from io import BytesIO
 
 import pytest
-from ckan.lib import uploader
-from ckan.tests import factories
 from faker import Faker
 from pytest_factoryboy import register
+
+from ckan.lib import uploader
+from ckan.tests import factories
 
 import ckanext.tour.tests.factories as tour_factories
 from ckanext.tour.tests.helpers import IMAGE_DATA, FakeFileStorage
@@ -21,7 +22,7 @@ def _migrate_plugins(migrate_db_for):
     migrate_db_for("files")
 
 
-@pytest.fixture()
+@pytest.fixture
 def clean_db(with_plugins, reset_db, migrate_db_for):
     reset_db()
     _migrate_plugins(migrate_db_for)
@@ -55,4 +56,4 @@ def tour_image_data():
 
         return data
 
-    yield _prepare_data
+    return _prepare_data
