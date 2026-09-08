@@ -4,8 +4,9 @@ import logging
 from datetime import datetime
 from typing import Any, cast
 
-from sqlalchemy import CursorResult, ForeignKey, Text, func, select, update
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import CursorResult, ForeignKey, Text, event, func, select, update
+from sqlalchemy.orm import Mapped, Mapper, mapped_column, relationship
+from sqlalchemy.engine import Connection
 from typing import Self
 
 from ckan import model, types
@@ -228,3 +229,26 @@ class TourStep(tk.BaseModel):
             "image_id": self.image_id,
             "image_url": self.image,
         }
+
+
+@event.listens_for(TourStep, "after_insert")
+@event.listens_for(TourStep, "after_update")
+@event.listens_for(TourStep, "after_delete")
+def _bump_tour_modified_at(
+    mapper: Mapper[TourStep],
+    connection: Connection,
+    target: TourStep,
+) -> None:
+    """Keep ``tour.modified_at`` current whenever one of its steps changes.
+
+    A step edited on its own (htmx delete, direct API call) would otherwise
+    leave the parent untouched, freezing its position in the admin table.
+    """
+    if not target.tour_id:
+        return
+
+    connection.execute(
+        update(Tour)
+        .where(Tour.id == target.tour_id)
+        .values(modified_at=datetime.utcnow()),
+    )

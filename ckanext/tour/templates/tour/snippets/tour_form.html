@@ -17,6 +17,15 @@
         {{ form.info(_('Optional. A path to a page, where tour will be applied. Note, that a page tour will be triggered automatically.', classes=['info-help-tight'])) }}
     {% endcall %}
 
+    {% if not is_create %}
+        {% call form.select("state", label=_("State"), selected=data.state, error=errors.state, options=[
+            {"value": "active", "text": _("Active")},
+            {"value": "inactive", "text": _("Inactive")},
+        ]) %}
+            {{ form.info(_("Inactive tours are hidden from visitors.")) }}
+        {% endcall %}
+    {% endif %}
+
     <div class="form-actions js-form-wrapper form-wrapper mb-3">
         <p class="mb-2 mb-sm-0 me-auto d-flex align-items-center"><b>{{ _("Tour steps:") }}</b></p>
 

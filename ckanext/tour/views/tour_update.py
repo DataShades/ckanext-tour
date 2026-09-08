@@ -78,5 +78,6 @@ class TourUpdateView(MethodView):
             "title": tk.request.form.get("title"),
             "anchor": tk.request.form.get("anchor"),
             "page": tk.request.form.get("page"),
+            "state": tk.request.form.get("state"),
             "steps": list(steps.values()),
         }

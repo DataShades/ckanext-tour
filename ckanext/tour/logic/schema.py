@@ -44,13 +44,26 @@ def tour_create(
 
 
 @validator_args
-def tour_update(not_empty, unicode_safe, tour_tour_exist, ignore_empty) -> Schema:
+def tour_update(
+    not_empty,
+    unicode_safe,
+    tour_tour_exist,
+    ignore_empty,
+    ignore_missing,
+    one_of,
+) -> Schema:
     tour_schema = tour_create()
     tour_schema["id"] = [not_empty, unicode_safe, tour_tour_exist]
     tour_schema["steps"] = tour_step_update()
 
     # non-mandatory
     tour_schema["title"] = [ignore_empty, unicode_safe]
+
+    # keep the tour's current state unless a new one is explicitly submitted
+    tour_schema["state"] = [
+        ignore_missing,
+        one_of([Tour.State.active, Tour.State.inactive]),
+    ]
 
     # we shouldn't be able to change an author_id
     tour_schema.pop("author_id")

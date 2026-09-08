@@ -137,6 +137,51 @@ class TestTourUpdate:
         assert updated_tour["page"] == "yyy"
         assert updated_tour["anchor"] == "zzz"
 
+    def test_update_without_state_keeps_current_state(self, tour_factory):
+        tour = tour_factory(steps=[], state=tour_model.Tour.State.inactive)
+
+        updated = call_action(
+            "tour_update", id=tour["id"], title="t", anchor="#a", page="/p"
+        )
+
+        assert updated["state"] == tour_model.Tour.State.inactive
+
+    def test_update_can_change_state(self, tour_factory):
+        tour = tour_factory(steps=[])
+
+        updated = call_action(
+            "tour_update",
+            id=tour["id"],
+            title="t",
+            anchor="#a",
+            page="/p",
+            state=tour_model.Tour.State.inactive,
+        )
+
+        assert updated["state"] == tour_model.Tour.State.inactive
+
+    def test_update_bumps_modified_at(self, tour_factory):
+        tour = tour_factory(steps=[])
+
+        updated = call_action(
+            "tour_update", id=tour["id"], title="t", anchor="#a", page="/p"
+        )
+
+        assert updated["modified_at"] >= tour["modified_at"]
+
+    def test_update_rejects_unknown_state(self, tour_factory):
+        tour = tour_factory(steps=[])
+
+        with pytest.raises(tk.ValidationError, match="Value must be one of"):
+            call_action(
+                "tour_update",
+                id=tour["id"],
+                title="t",
+                anchor="#a",
+                page="/p",
+                state="deleted",
+            )
+
     def test_add_step_via_update(self, tour_factory):
         tour = tour_factory(steps=[])
 
@@ -205,6 +250,22 @@ class TestTourStepUpdate:
             match="The tour step with an id xxx doesn't exist",
         ):
             call_action("tour_step_update", id="xxx")
+
+    def test_update_persists(self, tour_factory, tour_step_factory):
+        tour = tour_factory(steps=[])
+        step = tour_step_factory(tour_id=tour["id"], title="old")
+
+        call_action(
+            "tour_step_update",
+            id=step["id"],
+            title="new",
+            element=".y",
+            intro="i",
+            position="top",
+        )
+
+        shown = call_action("tour_show", id=tour["id"])
+        assert shown["steps"][0]["title"] == "new"
 
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import Any, cast
 
 from sqlalchemy import select
@@ -136,7 +137,8 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
     tour.title = data_dict.get("title", tour.title)
     tour.anchor = data_dict.get("anchor", tour.anchor)
     tour.page = data_dict.get("page", tour.page)
-    tour.state = data_dict.get("state", tour.page)
+    tour.state = data_dict.get("state", tour.state)
+    tour.modified_at = datetime.utcnow()
 
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
 
@@ -211,6 +213,8 @@ def tour_step_update(context: types.Context, data_dict: types.DataDict) -> dict[
     tour_step.intro = data_dict["intro"]
     tour_step.position = data_dict["position"]
     tour_step.image_id = image_id or data_dict.get("image_id", tour_step.image_id)
+
+    model.Session.commit()
 
     return tour_step.dictize(context)
 

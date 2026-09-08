@@ -1,6 +1,7 @@
 import pytest
 
 from ckan import model
+from ckan.tests.helpers import call_action
 
 from ckanext.tour.model import Tour, TourStep
 
@@ -65,3 +66,45 @@ class TestTourStepModel:
         step = TourStep.get(tour_step_factory(tour_id=tour["id"])["id"])
 
         assert step.image == ""
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
+class TestStepChangesTouchTour:
+    """Adding / editing / removing a step bumps the parent tour's modified_at."""
+
+    @staticmethod
+    def _modified_at(tour_id):
+        return Tour.get(tour_id).modified_at
+
+    def test_creating_a_step_bumps_tour(self, tour_factory, tour_step_factory):
+        tour = tour_factory(steps=[])
+        before = self._modified_at(tour["id"])
+
+        tour_step_factory(tour_id=tour["id"])
+
+        assert self._modified_at(tour["id"]) > before
+
+    def test_updating_a_step_bumps_tour(self, tour_factory, tour_step_factory):
+        tour = tour_factory(steps=[])
+        step = tour_step_factory(tour_id=tour["id"])
+        before = self._modified_at(tour["id"])
+
+        call_action(
+            "tour_step_update",
+            id=step["id"],
+            title="x",
+            element=".y",
+            intro="i",
+            position="top",
+        )
+
+        assert self._modified_at(tour["id"]) > before
+
+    def test_removing_a_step_bumps_tour(self, tour_factory, tour_step_factory):
+        tour = tour_factory(steps=[])
+        step = tour_step_factory(tour_id=tour["id"])
+        before = self._modified_at(tour["id"])
+
+        call_action("tour_step_remove", id=step["id"])
+
+        assert self._modified_at(tour["id"]) > before
