@@ -111,7 +111,7 @@ class TourStep(tk.BaseModel):
     element = Column(Text)
     intro = Column(Text, nullable=True)
     position = Column(Text, default=Position.bottom)
-    tour_id = Column(Text, ForeignKey("tour.id", ondelete="CASCADE"))
+    tour_id = Column(Text, ForeignKey("tour.id", ondelete="CASCADE"), index=True)
     image_id = Column(Text, nullable=True)
 
     tour = relationship("Tour", back_populates="steps")
