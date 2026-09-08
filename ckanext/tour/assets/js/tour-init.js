@@ -27,8 +27,14 @@ this.ckan.module('tour-init', function (jQuery) {
         },
 
         _isMobile: function () {
-            var md = new MobileDetect(window.navigator.userAgent);
-            return md.mobile() ? true : false;
+            // Autoplay is suppressed on small/touch screens where the Shepherd
+            // popup positioning and body-scroll-lock behave poorly. A media
+            // query covers this.
+            if (!window.matchMedia) {
+                return false;
+            }
+
+            return window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
         },
 
         /**
