@@ -21,12 +21,12 @@ def clean_db(with_plugins, reset_db, migrate_db_for):
     _migrate_plugins(migrate_db_for)
 
 
-@register(_name="user") # pyright: ignore[reportCallIssue]
+@register(_name="user")  # pyright: ignore[reportCallIssue]
 class UserFactory(factories.UserWithToken):
     pass
 
 
-@register(_name="sysadmin") # pyright: ignore[reportCallIssue]
+@register(_name="sysadmin")  # pyright: ignore[reportCallIssue]
 class SysadminFactory(factories.SysadminWithToken):
     pass
 

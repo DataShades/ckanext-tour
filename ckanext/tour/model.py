@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Any, Self, cast
+from typing import Any, cast
 
 from sqlalchemy import CursorResult, ForeignKey, Text, func, select, update
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from typing import Self
 
 from ckan import model, types
 from ckan.model import User
