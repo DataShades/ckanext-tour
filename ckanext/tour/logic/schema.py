@@ -23,16 +23,15 @@ def tour_create(
     user_id_or_name_exists,
     one_of,
     ignore,
-    tour_duplicate_anchor,
-    tour_selector_validator,
+    boolean_validator,
 ) -> Schema:
     step_schema = tour_step_schema()
     step_schema["tour_id"] = [ignore_missing]
 
     return {
         "title": [not_empty, unicode_safe],
-        "anchor": [ignore_missing, unicode_safe, tour_selector_validator, tour_duplicate_anchor],
-        "page": [ignore_missing, unicode_safe],
+        "endpoint": [ignore_missing, unicode_safe],
+        "auto_start": [default(False), boolean_validator],
         "author_id": [not_empty, user_id_or_name_exists],
         "state": [
             default(Tour.State.active),
@@ -51,6 +50,7 @@ def tour_update(
     ignore_empty,
     ignore_missing,
     one_of,
+    boolean_validator,
 ) -> Schema:
     tour_schema = tour_create()
     tour_schema["id"] = [not_empty, unicode_safe, tour_tour_exist]
@@ -59,11 +59,12 @@ def tour_update(
     # non-mandatory
     tour_schema["title"] = [ignore_empty, unicode_safe]
 
-    # keep the tour's current state unless a new one is explicitly submitted
+    # keep the tour's current values unless new ones are explicitly submitted
     tour_schema["state"] = [
         ignore_missing,
         one_of([Tour.State.active, Tour.State.inactive]),
     ]
+    tour_schema["auto_start"] = [ignore_missing, boolean_validator]
 
     # we shouldn't be able to change an author_id
     tour_schema.pop("author_id")

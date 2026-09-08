@@ -9,12 +9,12 @@
         {{ form.info(_("A tour title to explain what is it for")) }}
     {% endcall %}
 
-    {% call form.input("anchor", label=_("Query anchor"), value=data.anchor or ".breadcrumb .active", error=errors.anchor, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
-        {{ form.info(_('An anchor element query that will trigger the tour. Could be a tooltip, button or any HTML element.', classes=['info-help-tight'])) }}
+    {% call form.select("endpoint", label=_("Show on"), selected=data.endpoint or "", error=errors.endpoint, options=h.tour_get_page_options()) %}
+        {{ form.info(_('Which page shows this tour. "Everywhere" adds it to every page; a parametrised route (e.g. dataset.read) covers every page of that type.', classes=['info-help-tight'])) }}
     {% endcall %}
 
-    {% call form.input("page", label=_("Page anchor"), value=data.page, error=errors.page) %}
-        {{ form.info(_('Optional. A path to a page, where tour will be applied. Note, that a page tour will be triggered automatically.', classes=['info-help-tight'])) }}
+    {% call form.checkbox("auto_start", label=_("Start automatically"), value="true", checked=data.auto_start) %}
+        {{ form.info(_('Open this tour the first time a visitor lands on a matching page. They can replay it from the floating button afterwards.', classes=['info-help-tight'])) }}
     {% endcall %}
 
     {% if not is_create %}

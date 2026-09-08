@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import ckan.plugins.toolkit as tk
 
-CONF_AUTOPLAY = "ckanext.tour.autoplay"
-CONF_DEFAULT_ANCHOR = "ckanext.tour.default_anchor"
 CONF_COLLAPSE_STEPS = "ckanext.tour.collapse_steps"
+CONF_LAUNCHER_POSITION = "ckanext.tour.launcher_position"
 
-DEFAULT_AUTOPLAY = False
-DEFAULT_ANCHOR = ".breadcrumb .active"
 DEFAULT_COLLAPSE_STEPS = True
+DEFAULT_LAUNCHER_POSITION = "bottom-right"
+LAUNCHER_POSITIONS = ("bottom-right", "bottom-left")
 
 
 def _bool(key: str, default: bool) -> bool:
@@ -27,13 +26,11 @@ def _bool(key: str, default: bool) -> bool:
     return tk.asbool(value)
 
 
-def is_auto_play_enabled() -> bool:
-    return _bool(CONF_AUTOPLAY, DEFAULT_AUTOPLAY)
-
-
-def get_default_anchor() -> str:
-    return tk.config.get(CONF_DEFAULT_ANCHOR) or DEFAULT_ANCHOR
-
-
 def is_collapse_steps_enabled() -> bool:
     return _bool(CONF_COLLAPSE_STEPS, DEFAULT_COLLAPSE_STEPS)
+
+
+def get_launcher_position() -> str:
+    value = tk.config.get(CONF_LAUNCHER_POSITION) or DEFAULT_LAUNCHER_POSITION
+
+    return value if value in LAUNCHER_POSITIONS else DEFAULT_LAUNCHER_POSITION

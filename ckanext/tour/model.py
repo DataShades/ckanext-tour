@@ -5,6 +5,7 @@ from datetime import UTC, datetime
 from typing import Any, Self, cast
 
 from sqlalchemy import (
+    Boolean,
     CursorResult,
     DateTime,
     ForeignKey,
@@ -47,8 +48,8 @@ class Tour(tk.BaseModel):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     modified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
-    anchor: Mapped[str] = mapped_column(Text)
-    page: Mapped[str | None] = mapped_column(Text)
+    endpoint: Mapped[str | None] = mapped_column(Text)
+    auto_start: Mapped[bool] = mapped_column(Boolean, default=False)
 
     user: Mapped[User] = relationship(User)
 
@@ -107,8 +108,8 @@ class Tour(tk.BaseModel):
             "state": self.state,
             "created_at": self.created_at.isoformat(),
             "modified_at": self.modified_at.isoformat(),
-            "anchor": self.anchor or "",
-            "page": self.page or "",
+            "endpoint": self.endpoint or "",
+            "auto_start": bool(self.auto_start),
         }
 
         if fields is None or "steps" in fields:
@@ -126,16 +127,22 @@ class Tour(tk.BaseModel):
         return model.Session.scalars(stmt).one_or_none()
 
     @classmethod
-    def get_by_anchor(cls, tour_anchor: str) -> Self | None:
-        stmt = select(cls).where(cls.anchor == tour_anchor)
-
-        return model.Session.scalars(stmt).one_or_none()
-
-    @classmethod
     def all(cls) -> list[Self]:
         stmt = select(cls).order_by(cls.created_at.desc())
 
         return list(model.Session.scalars(stmt).all())
+
+    @classmethod
+    def active_for_endpoint(cls, endpoint: str | None) -> list[Self]:
+        """Active tours shown on ``endpoint`` (plus the ``endpoint``-less ones)."""
+        stmt = select(cls).where(cls.state == cls.State.active)
+
+        if endpoint:
+            stmt = stmt.where(cls.endpoint.in_(["", endpoint]) | cls.endpoint.is_(None))
+        else:
+            stmt = stmt.where((cls.endpoint == "") | cls.endpoint.is_(None))
+
+        return list(model.Session.scalars(stmt.order_by(cls.created_at.desc())).all())
 
     @classmethod
     def set_state(cls, ids: list[str], state: str) -> int:

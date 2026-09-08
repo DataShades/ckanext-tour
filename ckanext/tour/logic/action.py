@@ -143,8 +143,8 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
     tour = cast(Tour, Tour.get(data_dict["id"]))
 
     tour.title = data_dict.get("title", tour.title)
-    tour.anchor = data_dict.get("anchor", tour.anchor)
-    tour.page = data_dict.get("page", tour.page)
+    tour.endpoint = data_dict.get("endpoint", tour.endpoint)
+    tour.auto_start = data_dict.get("auto_start", tour.auto_start)
     tour.state = data_dict.get("state", tour.state)
     tour.modified_at = utcnow()
 

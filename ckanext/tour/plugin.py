@@ -27,12 +27,16 @@ class TourPlugin(plugins.SingletonPlugin):
         ignore_missing = tk.get_validator("ignore_missing")
         unicode_safe = tk.get_validator("unicode_safe")
         boolean_validator = tk.get_validator("boolean_validator")
+        one_of = tk.get_validator("one_of")
 
         schema.update(
             {
-                config.CONF_AUTOPLAY: [ignore_missing, boolean_validator],
-                config.CONF_DEFAULT_ANCHOR: [ignore_missing, unicode_safe],
                 config.CONF_COLLAPSE_STEPS: [ignore_missing, boolean_validator],
+                config.CONF_LAUNCHER_POSITION: [
+                    ignore_missing,
+                    unicode_safe,
+                    one_of(list(config.LAUNCHER_POSITIONS)),
+                ],
             }
         )
 

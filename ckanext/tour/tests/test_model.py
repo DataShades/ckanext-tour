@@ -8,12 +8,22 @@ from ckanext.tour.model import Tour, TourStep
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourModel:
-    def test_get_and_get_by_anchor(self, tour_factory):
-        tour = tour_factory(steps=[], anchor="#uniq")
+    def test_get(self, tour_factory):
+        tour = tour_factory(steps=[])
 
         assert Tour.get(tour["id"]).id == tour["id"]
-        assert Tour.get_by_anchor("#uniq").id == tour["id"]
         assert Tour.get("no-such-id") is None
+
+    def test_active_for_endpoint(self, tour_factory):
+        everywhere = tour_factory(steps=[], endpoint="")
+        dataset = tour_factory(steps=[], endpoint="dataset.read")
+        tour_factory(steps=[], endpoint="dataset.read", state=Tour.State.inactive)
+
+        on_dataset = {t.id for t in Tour.active_for_endpoint("dataset.read")}
+        assert on_dataset == {everywhere["id"], dataset["id"]}
+
+        on_home = {t.id for t in Tour.active_for_endpoint("home.index")}
+        assert on_home == {everywhere["id"]}
 
     def test_all_returns_every_tour(self, tour_factory):
         ids = {tour_factory(steps=[])["id"] for _ in range(3)}

@@ -19,9 +19,11 @@ class TourConfigView(MethodView):
 
     def post(self) -> Response | str:
         data_dict = {
-            config.CONF_AUTOPLAY: tk.request.form.get(config.CONF_AUTOPLAY, "false"),
-            config.CONF_DEFAULT_ANCHOR: tk.request.form.get(config.CONF_DEFAULT_ANCHOR, ""),
             config.CONF_COLLAPSE_STEPS: tk.request.form.get(config.CONF_COLLAPSE_STEPS, "false"),
+            config.CONF_LAUNCHER_POSITION: tk.request.form.get(
+                config.CONF_LAUNCHER_POSITION,
+                config.DEFAULT_LAUNCHER_POSITION,
+            ),
         }
 
         try:
@@ -45,7 +47,6 @@ class TourConfigView(MethodView):
 
     def _current_values(self) -> dict[str, object]:
         return {
-            config.CONF_AUTOPLAY: config.is_auto_play_enabled(),
-            config.CONF_DEFAULT_ANCHOR: config.get_default_anchor(),
             config.CONF_COLLAPSE_STEPS: config.is_collapse_steps_enabled(),
+            config.CONF_LAUNCHER_POSITION: config.get_launcher_position(),
         }

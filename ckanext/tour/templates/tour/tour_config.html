@@ -30,22 +30,16 @@
         {{ h.csrf_input() }}
 
         {% call form.select(
-            "ckanext.tour.autoplay",
-            label=_("Autoplay"),
-            options=bool_options,
-            selected=data["ckanext.tour.autoplay"] | string | lower,
-            error=errors.get("ckanext.tour.autoplay")
+            "ckanext.tour.launcher_position",
+            label=_("Launcher position"),
+            options=[
+                {"value": "bottom-right", "text": _("Bottom right")},
+                {"value": "bottom-left", "text": _("Bottom left")},
+            ],
+            selected=data["ckanext.tour.launcher_position"],
+            error=errors.get("ckanext.tour.launcher_position")
         ) %}
-            {{ form.info(_("If enabled, the tour will start automatically when the page is loaded")) }}
-        {% endcall %}
-
-        {% call form.input(
-            "ckanext.tour.default_anchor",
-            label=_("Default anchor"),
-            value=data["ckanext.tour.default_anchor"],
-            error=errors.get("ckanext.tour.default_anchor")
-        ) %}
-            {{ form.info(_("The default anchor for the tour to attach to")) }}
+            {{ form.info(_("Where the floating \"Start tour\" button sits on pages that have a tour")) }}
         {% endcall %}
 
         {% call form.select(

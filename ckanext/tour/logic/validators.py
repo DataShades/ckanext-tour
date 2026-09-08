@@ -56,25 +56,12 @@ def tour_url_validator(
     errors[key].append(tk._("Please provide a valid URL"))
 
 
-def tour_duplicate_anchor(
-    key: types.FlattenKey,
-    data: types.FlattenDataDict,
-    errors: types.FlattenErrorDict,
-    context: types.Context,
-) -> Any:
-    """Ensures that the tour step with a given anchor doesn't exist."""
-    result = tour_model.Tour.get_by_anchor(data[key])
-
-    if result and result.id != data.get(("id",)):
-        raise tk.Invalid(f"The tour step with an anchor `{data[key]}` already exists.")
-
-
 def tour_selector_validator(value: Any) -> Any:
     """Reject a value a browser would parse as HTML rather than a CSS selector.
 
-    The tour ``anchor`` and step ``element`` end up in ``$(value)`` /
-    ``document.querySelector(value)`` on every visitor's page; a leading ``<``
-    makes jQuery build DOM nodes instead of matching, so refuse it here.
+    A step ``element`` ends up in ``document.querySelector(value)`` on every
+    visitor's page; a leading ``<`` makes jQuery build DOM nodes instead of
+    matching, so refuse it here.
     """
     if value and "<" in str(value):
         raise tk.Invalid(tk._("A CSS selector cannot contain '<'"))

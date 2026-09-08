@@ -29,8 +29,7 @@ class TestTourConfigView:
         app.post(
             tk.url_for("tour.config"),
             data={
-                config.CONF_AUTOPLAY: "true",
-                config.CONF_DEFAULT_ANCHOR: ".custom-anchor",
+                config.CONF_LAUNCHER_POSITION: "bottom-left",
                 config.CONF_COLLAPSE_STEPS: "false",
             },
             headers={"Authorization": sysadmin["token"]},
@@ -38,8 +37,7 @@ class TestTourConfigView:
 
         # assert via the helpers: CKAN stores runtime-editable options back as
         # raw strings, so tk.config[...] is not the coerced value
-        assert config.is_auto_play_enabled() is True
-        assert config.get_default_anchor() == ".custom-anchor"
+        assert config.get_launcher_position() == "bottom-left"
         assert config.is_collapse_steps_enabled() is False
 
 

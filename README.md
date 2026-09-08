@@ -10,14 +10,14 @@ ckanext-tour is a CKAN extension that provides a guided tour feature for CKAN in
 - Customize tour appearance and behavior
 - Easily manage and edit tours through the CKAN admin interface
 
-Once the extension is installed and enabled, you can start creating tours through the CKAN admin interface. Tours can be associated with specific pages or sections of your CKAN portal, and you can define multiple steps for each tour.
+Once the extension is installed and enabled, you can start creating tours through the CKAN admin interface. Each tour is bound to a page by its **Flask endpoint** (for example `dataset.read` covers every dataset page, or pick "Everywhere"), and you can define multiple steps for each tour.
 
-To start a tour, users can click on a tour trigger button or it can be started automatically, when user visits the specified page. The tour will guide them through the specified steps, highlighting the relevant elements on each page.
+Every page that has one or more tours shows a single floating **Start tour** button. If more than one tour applies, the button opens a short menu of their titles. A tour with **Start automatically** enabled also opens by itself the first time a visitor lands on a matching page; they can replay it from the button afterwards.
 
 Each step contains next information:
 
 - Title: A brief, engaging headline that summarizes the step.
-- Query: Query to specify which element we're highlighting
+- Query: CSS selector for the element we're highlighting
 - Intro: Text, that will be displayed on a step card
 - Position: Specifies the placement of step card (top, right, bottom, left).
 - Image (Optional): Visuals to complement the text, illustrate points, or add visual interest. GIF animation could be used here.
@@ -99,11 +99,9 @@ ckan.files.storage.tour_link.timeout = 5
 ## Config settings
 
 ```ini
-# Start the tour automatically when the anchored page is loaded (default: false)
-ckanext.tour.autoplay = false
-
-# Default anchor element the tour attaches to (default: .breadcrumb .active)
-ckanext.tour.default_anchor = .breadcrumb .active
+# Where the floating "Start tour" button sits on pages that have a tour:
+# bottom-right (default) or bottom-left
+ckanext.tour.launcher_position = bottom-right
 
 # Collapse tour steps on the edit/create form (default: true)
 ckanext.tour.collapse_steps = true

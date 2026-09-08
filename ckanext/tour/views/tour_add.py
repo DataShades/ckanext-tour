@@ -49,8 +49,8 @@ class TourAddView(MethodView):
 
         return {
             "title": tk.request.form.get("title"),
-            "anchor": tk.request.form.get("anchor"),
-            "page": tk.request.form.get("page"),
+            "endpoint": tk.request.form.get("endpoint", ""),
+            "auto_start": bool(tk.request.form.get("auto_start")),
             "author_id": tk.current_user.id,  # type: ignore
             "steps": list(steps.values()),
         }

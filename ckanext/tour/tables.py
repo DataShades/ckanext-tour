@@ -28,8 +28,7 @@ class TourTable(t.TableDefinition):
                     Tour.id,
                     Tour.title,
                     Tour.state,
-                    Tour.anchor,
-                    Tour.page,
+                    Tour.endpoint,
                     Tour.created_at,
                     Tour.modified_at,
                     Tour.author_id,
@@ -41,8 +40,7 @@ class TourTable(t.TableDefinition):
             columns=[
                 t.ColumnDefinition(field="title"),
                 t.ColumnDefinition(field="state"),
-                t.ColumnDefinition(field="anchor"),
-                t.ColumnDefinition(field="page"),
+                t.ColumnDefinition(field="endpoint", title=tk._("Shown on")),
                 t.ColumnDefinition(
                     field="created_at",
                     formatters=[(t.formatters.DateFormatter, {"date_format": "%d %B %Y"})],

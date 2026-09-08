@@ -14,12 +14,12 @@ class TestTourCreate:
         tour = tour_factory()
 
         assert tour["id"]
-        assert tour["anchor"]
         assert tour["author_id"]
         assert tour["created_at"]
         assert tour["modified_at"]
         assert tour["title"]
-        assert tour["page"]
+        assert tour["endpoint"] == ""
+        assert tour["auto_start"] is False
         assert tour["state"] == tour_model.Tour.State.active
         assert tour["steps"][0]["id"]
         assert tour["steps"][0]["element"]
@@ -29,15 +29,28 @@ class TestTourCreate:
         assert tour["steps"][0]["image_url"] == ""
         assert tour["steps"][0]["tour_id"] == tour["id"]
 
-    def test_html_like_anchor_rejected(self, sysadmin):
-        with pytest.raises(tk.ValidationError, match="cannot contain"):
-            call_action(
-                "tour_create",
-                title="t",
-                anchor="<script>alert(1)</script>",
-                author_id=sysadmin["id"],
-                steps=[],
-            )
+    def test_auto_start_defaults_to_false(self, sysadmin):
+        tour = call_action(
+            "tour_create",
+            title="t",
+            author_id=sysadmin["id"],
+            steps=[],
+        )
+
+        assert tour["auto_start"] is False
+
+    def test_endpoint_and_auto_start_are_stored(self, sysadmin):
+        tour = call_action(
+            "tour_create",
+            title="t",
+            endpoint="dataset.read",
+            auto_start=True,
+            author_id=sysadmin["id"],
+            steps=[],
+        )
+
+        assert tour["endpoint"] == "dataset.read"
+        assert tour["auto_start"] is True
 
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
@@ -83,8 +96,7 @@ class TestTourStepCreate:
             call_action(
                 "tour_create",
                 title="test tour",
-                anchor="#page",
-                page="/datasets/",
+                endpoint="dataset.read",
                 steps=[
                     {
                         "title": "step #1",
@@ -99,8 +111,7 @@ class TestTourStepCreate:
         call_action(
             "tour_create",
             title="test tour",
-            anchor="#page",
-            page="/datasets/",
+            endpoint="dataset.read",
             author_id=sysadmin["id"],
             steps=[
                 {
@@ -128,23 +139,28 @@ class TestTourUpdate:
 
         tour = call_action("tour_show", id=tour["id"])
         tour["title"] = "xxx"
-        tour["page"] = "yyy"
-        tour["anchor"] = "zzz"
+        tour["endpoint"] = "dataset.read"
+        tour["auto_start"] = True
 
         updated_tour = call_action("tour_update", **tour)
 
         assert updated_tour["title"] == "xxx"
-        assert updated_tour["page"] == "yyy"
-        assert updated_tour["anchor"] == "zzz"
+        assert updated_tour["endpoint"] == "dataset.read"
+        assert updated_tour["auto_start"] is True
 
     def test_update_without_state_keeps_current_state(self, tour_factory):
         tour = tour_factory(steps=[], state=tour_model.Tour.State.inactive)
 
-        updated = call_action(
-            "tour_update", id=tour["id"], title="t", anchor="#a", page="/p"
-        )
+        updated = call_action("tour_update", id=tour["id"], title="t")
 
         assert updated["state"] == tour_model.Tour.State.inactive
+
+    def test_update_without_auto_start_keeps_current_value(self, tour_factory):
+        tour = tour_factory(steps=[], auto_start=True)
+
+        updated = call_action("tour_update", id=tour["id"], title="t")
+
+        assert updated["auto_start"] is True
 
     def test_update_can_change_state(self, tour_factory):
         tour = tour_factory(steps=[])
@@ -153,8 +169,6 @@ class TestTourUpdate:
             "tour_update",
             id=tour["id"],
             title="t",
-            anchor="#a",
-            page="/p",
             state=tour_model.Tour.State.inactive,
         )
 
@@ -163,9 +177,7 @@ class TestTourUpdate:
     def test_update_bumps_modified_at(self, tour_factory):
         tour = tour_factory(steps=[])
 
-        updated = call_action(
-            "tour_update", id=tour["id"], title="t", anchor="#a", page="/p"
-        )
+        updated = call_action("tour_update", id=tour["id"], title="t")
 
         assert updated["modified_at"] >= tour["modified_at"]
 
@@ -177,8 +189,6 @@ class TestTourUpdate:
                 "tour_update",
                 id=tour["id"],
                 title="t",
-                anchor="#a",
-                page="/p",
                 state="deleted",
             )
 
@@ -189,8 +199,6 @@ class TestTourUpdate:
             "tour_update",
             id=tour["id"],
             title="t",
-            anchor="#a",
-            page="/p",
             steps=[
                 {"title": "s1", "element": ".x", "intro": "i", "position": "bottom"},
             ],
@@ -206,8 +214,6 @@ class TestTourUpdate:
             "tour_update",
             id=tour["id"],
             title="t",
-            anchor="#a",
-            page="/p",
             steps=[
                 {
                     "id": step["id"],
@@ -309,17 +315,17 @@ class TestTourList:
             "state",
             "created_at",
             "modified_at",
-            "anchor",
-            "page",
+            "endpoint",
+            "auto_start",
             "steps",
         }
 
     def test_fl_as_list_limits_fields(self, tour_factory):
         tour_factory(steps=[])
 
-        result = call_action("tour_list", fl=["id", "anchor"])
+        result = call_action("tour_list", fl=["id", "endpoint"])
 
-        assert set(result[0]) == {"id", "anchor"}
+        assert set(result[0]) == {"id", "endpoint"}
 
     def test_fl_as_single_string_field(self, tour_factory):
         tour_factory(steps=[])
@@ -437,8 +443,6 @@ class TestTourStepImage:
             "tour_create",
             context={"user": sysadmin["name"]},
             title="t",
-            anchor="#a",
-            page="/p",
             author_id=sysadmin["id"],
             steps=[],
         )

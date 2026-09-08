@@ -84,28 +84,3 @@ class TestExistenceValidators:
     def test_step_missing(self):
         with pytest.raises(tk.Invalid, match="doesn't exist"):
             validators.tour_tour_step_exist("no-such-id", {})
-
-
-@pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
-class TestTourDuplicateAnchor:
-    def _run(self, anchor, data_id=None):
-        data = {("anchor",): anchor}
-        if data_id is not None:
-            data[("id",)] = data_id
-        validators.tour_duplicate_anchor(("anchor",), data, {}, {})
-
-    def test_free_anchor_passes(self, tour_factory):
-        tour_factory(steps=[], anchor="#taken")
-
-        self._run("#free")
-
-    def test_duplicate_anchor_rejected(self, tour_factory):
-        tour_factory(steps=[], anchor="#taken")
-
-        with pytest.raises(tk.Invalid, match="already exists"):
-            self._run("#taken")
-
-    def test_same_tour_keeping_its_anchor_passes(self, tour_factory):
-        tour = tour_factory(steps=[], anchor="#taken")
-
-        self._run("#taken", data_id=tour["id"])

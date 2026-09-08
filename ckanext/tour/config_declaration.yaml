@@ -2,19 +2,15 @@ version: 1
 groups:
   - annotation: Tour settings
     options:
-      - key: ckanext.tour.autoplay
-        type: bool
-        default: false
-        description: If enabled, the tour will start automatically
-        editable: true
-
-      - key: ckanext.tour.default_anchor
-        default: '.breadcrumb .active'
-        description: The default anchor for the tour to attach to
-        editable: true
-
       - key: ckanext.tour.collapse_steps
         type: bool
         default: true
         description: If enabled, the tour steps will be collapsed on edit/create
+        editable: true
+
+      - key: ckanext.tour.launcher_position
+        default: bottom-right
+        description: >-
+          Where the floating "Start tour" button is anchored on pages that have
+          a tour. One of "bottom-right" or "bottom-left".
         editable: true

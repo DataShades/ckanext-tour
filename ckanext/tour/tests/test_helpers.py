@@ -2,6 +2,8 @@ import json
 
 import pytest
 
+import ckan.plugins.toolkit as tk
+
 from ckanext.tour import helpers
 from ckanext.tour.model import TourStep
 
@@ -11,10 +13,10 @@ class TestTourConfigHelpers:
     def test_get_config_has_all_settings(self):
         cfg = helpers.tour_get_config()
 
-        assert set(cfg) == {"autoplay", "default_anchor", "collapse_steps"}
-        assert isinstance(cfg["autoplay"], bool)
+        assert set(cfg) == {"collapse_steps", "launcher_position", "tours"}
         assert isinstance(cfg["collapse_steps"], bool)
-        assert cfg["default_anchor"]
+        assert cfg["launcher_position"] in ("bottom-right", "bottom-left")
+        assert isinstance(cfg["tours"], list)
 
     def test_tour_config_is_json_and_carries_collapse_steps(self):
         parsed = json.loads(helpers.tour_get_tour_config())
@@ -46,3 +48,44 @@ class TestMiscHelpers:
 
     def test_admin_panel_flag_is_bool(self):
         assert isinstance(helpers.tour_is_admin_panel_enabled(), bool)
+
+
+@pytest.mark.usefixtures("with_plugins")
+class TestPageOptions:
+    def test_first_option_is_everywhere(self, app):
+        with app.flask_app.test_request_context("/"):
+            options = helpers.tour_get_page_options()
+
+        assert options[0] == {"value": "", "text": "Everywhere"}
+
+    def test_system_endpoints_are_excluded(self, app):
+        with app.flask_app.test_request_context("/"):
+            values = {o["value"] for o in helpers.tour_get_page_options()}
+
+        assert "home.index" in values
+        assert "static" not in values
+        assert not any(v.startswith(("api.", "webassets.", "tour.")) for v in values)
+
+    def test_options_are_deduplicated(self, app):
+        with app.flask_app.test_request_context("/"):
+            values = [o["value"] for o in helpers.tour_get_page_options()]
+
+        assert len(values) == len(set(values))
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
+class TestPageTours:
+    def test_page_embeds_matching_tours_only(self, app, tour_factory):
+        tour_factory(steps=[], endpoint="user.login", title="Loginonlytour")
+        tour_factory(steps=[], endpoint="user.register", title="Registeronlytour")
+
+        body = app.get(tk.url_for("user.login")).body
+
+        assert "Loginonlytour" in body
+        assert "Registeronlytour" not in body
+
+    def test_everywhere_tour_suppressed_on_auth_pages(self, app, tour_factory):
+        tour_factory(steps=[], endpoint="", title="Globaltour")
+
+        assert "Globaltour" in app.get(tk.url_for("home.about")).body
+        assert "Globaltour" not in app.get(tk.url_for("user.login")).body
