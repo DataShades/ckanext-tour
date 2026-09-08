@@ -5,6 +5,7 @@ from enum import IntEnum
 import ckan.plugins.toolkit as tk
 
 from ckanext.tour import config
+from ckanext.tour.model import Tour
 
 
 class Status(IntEnum):
@@ -106,3 +107,31 @@ class TestTourFormViews:
         )
 
         assert resp.status_code == Status.success
+
+    def test_delete_confirmation_missing_tour_returns_404(self, app, sysadmin):
+        resp = app.get(
+            tk.url_for("tour.delete", tour_id="no-such-id"),
+            headers={"Authorization": sysadmin["token"]},
+            status=Status.not_found,
+        )
+
+        assert resp.status_code == Status.not_found
+
+    def test_delete_post_removes_the_tour(self, app, sysadmin, tour_factory):
+        tour = tour_factory(steps=[])
+
+        app.post(
+            tk.url_for("tour.delete", tour_id=tour["id"]),
+            headers={"Authorization": sysadmin["token"]},
+        )
+
+        assert Tour.get(tour["id"]) is None
+
+    def test_delete_post_missing_tour_does_not_500(self, app, sysadmin):
+        resp = app.post(
+            tk.url_for("tour.delete", tour_id="no-such-id"),
+            headers={"Authorization": sysadmin["token"]},
+        )
+
+        assert resp.status_code == Status.success
+        assert "Tour not found" in resp.body
