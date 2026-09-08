@@ -62,3 +62,49 @@ class TestTourListView:
 
         assert resp.json["success"] is True
         assert resp.json["redirect"] == tk.url_for("tour.add")
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+class TestTourFormViews:
+    def test_add_page_renders(self, app, sysadmin):
+        resp = app.get(
+            tk.url_for("tour.add"), headers={"Authorization": sysadmin["token"]}
+        )
+
+        assert resp.status_code == Status.success
+
+    def test_add_page_forbidden_for_regular_user(self, app, user):
+        app.get(
+            tk.url_for("tour.add"),
+            headers={"Authorization": user["token"]},
+            status=Status.forbidden,
+        )
+
+    def test_edit_page_renders(self, app, sysadmin, tour_factory):
+        tour = tour_factory(steps=[])
+
+        resp = app.get(
+            tk.url_for("tour.edit", tour_id=tour["id"]),
+            headers={"Authorization": sysadmin["token"]},
+        )
+
+        assert resp.status_code == Status.success
+
+    def test_edit_missing_tour_returns_404(self, app, sysadmin):
+        resp = app.get(
+            tk.url_for("tour.edit", tour_id="no-such-id"),
+            headers={"Authorization": sysadmin["token"]},
+            status=Status.not_found,
+        )
+
+        assert resp.status_code == Status.not_found
+
+    def test_delete_confirmation_page_renders(self, app, sysadmin, tour_factory):
+        tour = tour_factory(steps=[])
+
+        resp = app.get(
+            tk.url_for("tour.delete", tour_id=tour["id"]),
+            headers={"Authorization": sysadmin["token"]},
+        )
+
+        assert resp.status_code == Status.success

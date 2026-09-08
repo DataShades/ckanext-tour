@@ -59,15 +59,21 @@ To install ckanext-tour:
     cd ckanext-tour
     pip install -e .
     ```
-3. Add `tables files file_upload_widget tour` to the `ckan.plugins` setting in your CKAN
-   config file (by default the config file is located at
-   `/etc/ckan/default/ckan.ini`).
+   `pip install -e .` also pulls in the three extensions `tour` depends on
+   (see the table below).
 
-   The tour list is rendered with
-   [ckanext-tables](https://github.com/DataShades/ckanext-tables), which is
-   installed automatically as a dependency and must be enabled alongside `tour`.
+3. Enable the plugins — add them to the `ckan.plugins` setting in your CKAN
+   config file (by default `/etc/ckan/default/ckan.ini`):
 
-   The `file_upload_widget` plugin is required for the file upload functionality.
+   ```
+   ckan.plugins = ... scheming_datasets tables files file_upload_widget tour
+   ```
+
+   | Package | Plugin(s) to enable | Needed for |
+   | --- | --- | --- |
+   | [ckanext-scheming](https://github.com/ckan/ckanext-scheming) | `scheming_datasets` (or any `scheming_*` plugin) | helpers used by the file_upload_widget |
+   | [ckanext-tables](https://github.com/DataShades/ckanext-tables) | `tables` | rendering the tour list |
+   | [ckanext-files](https://github.com/DataShades/ckanext-files) | `files`, `file_upload_widget` | storing and uploading step images |
 
 4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
 
@@ -108,8 +114,8 @@ These options are runtime-editable and can also be changed from the tour
 
 ## Tests
 
-To run the tests, do:
 ```sh
+pip install -e '.[test]'
 pytest --ckan-ini=test.ini
 ```
 

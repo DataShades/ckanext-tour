@@ -137,6 +137,65 @@ class TestTourUpdate:
         assert updated_tour["page"] == "yyy"
         assert updated_tour["anchor"] == "zzz"
 
+    def test_add_step_via_update(self, tour_factory):
+        tour = tour_factory(steps=[])
+
+        result = call_action(
+            "tour_update",
+            id=tour["id"],
+            title="t",
+            anchor="#a",
+            page="/p",
+            steps=[
+                {"title": "s1", "element": ".x", "intro": "i", "position": "bottom"},
+            ],
+        )
+
+        assert [s["title"] for s in result["steps"]] == ["s1"]
+
+    def test_update_existing_step_via_update(self, tour_factory, tour_step_factory):
+        tour = tour_factory(steps=[])
+        step = tour_step_factory(tour_id=tour["id"], title="old")
+
+        result = call_action(
+            "tour_update",
+            id=tour["id"],
+            title="t",
+            anchor="#a",
+            page="/p",
+            steps=[
+                {
+                    "id": step["id"],
+                    "title": "new",
+                    "element": ".x",
+                    "intro": "i",
+                    "position": "top",
+                },
+            ],
+        )
+
+        assert result["steps"][0]["title"] == "new"
+        assert result["steps"][0]["position"] == "top"
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
+class TestTourRemove:
+    def test_remove_deletes_the_tour_and_its_steps(
+        self, tour_factory, tour_step_factory
+    ):
+        tour = tour_factory(steps=[])
+        tour_step_factory(tour_id=tour["id"])
+        tour_step_factory(tour_id=tour["id"])
+
+        assert call_action("tour_remove", id=tour["id"]) is True
+
+        assert not tour_model.Tour.all()
+        assert tour_model.TourStep.get_by_tour(tour["id"]) == []
+
+    def test_remove_missing_tour_raises(self):
+        with pytest.raises(tk.ValidationError, match="doesn't exist"):
+            call_action("tour_remove", id="no-such-id")
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourStepUpdate:

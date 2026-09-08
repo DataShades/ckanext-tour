@@ -8,19 +8,19 @@ from ckan import types
 
 
 class TourUpdateView(MethodView):
-    def get(self, tour_id: str) -> str:
-        try:
-            tour = tk.get_action("tour_show")(self._build_context(), {"id": tour_id})
-        except tk.ValidationError:
-            return tk.render("tour/tour_404.html")
+    def get(self, tour_id: str) -> Response | str | tuple[str, int]:
+        tour = self._load_tour(tour_id)
+
+        if tour is None:
+            return tk.render("tour/tour_404.html"), 404
 
         return tk.render("tour/tour_edit.html", extra_vars={"data": tour, "errors": {}})
 
-    def post(self, tour_id: str) -> Response | str:
-        try:
-            tour = tk.get_action("tour_show")(self._build_context(), {"id": tour_id})
-        except tk.ValidationError:
-            return tk.render("tour/tour_404.html")
+    def post(self, tour_id: str) -> Response | str | tuple[str, int]:
+        tour = self._load_tour(tour_id)
+
+        if tour is None:
+            return tk.render("tour/tour_404.html"), 404
 
         data_dict = self._prepare_payload(tour_id)
 
@@ -39,6 +39,12 @@ class TourUpdateView(MethodView):
         tk.h.flash_success(tk._("The tour has been updated!"))
 
         return tk.redirect_to("tour.list")
+
+    def _load_tour(self, tour_id: str) -> dict | None:
+        try:
+            return tk.get_action("tour_show")(self._build_context(), {"id": tour_id})
+        except tk.ValidationError:
+            return None
 
     def _build_context(self) -> types.Context:
         return {
