@@ -30,7 +30,7 @@ class TourUpdateView(MethodView):
             return tk.render(
                 "tour/tour_edit.html",
                 extra_vars={
-                    "data": tour,
+                    "data": dict(data_dict, id=tour_id),
                     "errors": e.error_dict,
                     "error_summary": e.error_summary,
                 },

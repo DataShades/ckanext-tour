@@ -27,6 +27,24 @@ def _delete_files(*file_ids: str | None) -> None:
 _MANAGER_ONLY_FIELDS = ("author_id",)
 
 
+def _namespace_step_errors(
+    error_dict: dict[str, Any], index: int, total: int
+) -> dict[str, Any]:
+    """Re-shape a single step's error dict into the ``{"steps": [...]}`` list the
+    tour form expects.
+
+    ``tour_step_create`` / ``tour_step_update`` raise flat field errors (e.g.
+    ``{"image": "..."}``). Without this the tour form can't tell which step
+    failed and renders no message at all.
+    """
+    steps: list[dict[str, Any]] = [{} for _ in range(total)]
+
+    if 0 <= index < total:
+        steps[index] = dict(error_dict)
+
+    return {"steps": steps}
+
+
 def _user_manages_tours(context: types.Context) -> bool:
     try:
         tk.check_access("tour_manage", context)
@@ -100,7 +118,7 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
     tour = Tour.create(data_dict)
 
-    for step in steps:
+    for index, step in enumerate(steps):
         step["tour_id"] = tour.id
 
         try:
@@ -114,7 +132,9 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
                 {"id": tour.id},
             )
 
-            raise tk.ValidationError(e.error_dict) from e
+            raise tk.ValidationError(
+                _namespace_step_errors(e.error_dict, index, len(steps))
+            ) from e
 
     tour.reload_steps()
 
@@ -160,14 +180,16 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
         if step_id not in submitted_ids:
             tk.get_action("tour_step_remove")({"ignore_auth": True}, {"id": step_id})
 
-    for step in steps:
+    for index, step in enumerate(steps):
         action = "tour_step_update" if step.get("id") else "tour_step_create"
         step["tour_id"] = tour.id
 
         try:
             tk.get_action(action)({"ignore_auth": True}, step)
         except tk.ValidationError as e:
-            raise tk.ValidationError(e.error_dict) from e
+            raise tk.ValidationError(
+                _namespace_step_errors(e.error_dict, index, len(steps))
+            ) from e
 
     model.Session.commit()
 

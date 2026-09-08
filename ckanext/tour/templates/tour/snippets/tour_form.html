@@ -5,6 +5,18 @@
 <form action="{{ form_action }}" method="POST" enctype="multipart/form-data">
     {{ h.csrf_input() }}
 
+    {% set error_rows = h.tour_flatten_errors(errors) %}
+    {% if error_rows %}
+        <div class="error-explanation alert alert-danger">
+            <p>{{ _("The form contains invalid entries:") }}</p>
+            <ul>
+                {% for row in error_rows %}
+                    <li data-field-label="{{ row.label }}">{{ row.label }}: {{ row.message }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
     {% call form.input("title", label=_("Tour title"), value=data.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
         {{ form.info(_("A tour title to explain what is it for")) }}
     {% endcall %}

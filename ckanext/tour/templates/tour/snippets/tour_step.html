@@ -53,6 +53,13 @@
 
                     {{ form.select('step_position', label=_('Position'), options=h.tour_get_position_options(), selected=step.step_position or step.position, error=errors.position) }}
 
+                    {% set image_error = errors.image or errors.image_url or errors.image_id %}
+                    {% if image_error %}
+                        <div class="form-group error">
+                            <span class="error-block">{{ image_error if image_error is string else image_error | join(', ') }}</span>
+                        </div>
+                    {% endif %}
+
                     {% snippet "scheming/form_snippets/files_upload_widget.html",
                         field={
                             'field_name': 'step_image_id',

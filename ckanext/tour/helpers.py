@@ -146,3 +146,42 @@ def tour_get_tour_config() -> str:
 
 def tour_collapse_steps() -> bool:
     return config.is_collapse_steps_enabled()
+
+
+def tour_flatten_errors(errors: dict[str, Any] | None) -> list[dict[str, str]]:
+    """Flatten a tour-form error dict into ``[{"label", "message"}]`` rows for
+    the error summary at the top of the form.
+
+    Per-step errors live under ``errors["steps"]`` as a list aligned with the
+    rendered steps; each non-empty entry is labelled ``Step N`` so the summary
+    points at the step that failed.
+    """
+    if not errors:
+        return []
+
+    def _message(value: Any) -> str:
+        if isinstance(value, (list, tuple)):
+            return "; ".join(str(item) for item in value)
+        return str(value)
+
+    rows: list[dict[str, str]] = []
+
+    for key, value in errors.items():
+        if key == "steps":
+            continue
+
+        rows.append({"label": key.replace("_", " ").capitalize(), "message": _message(value)})
+
+    for idx, step_errors in enumerate(errors.get("steps") or [], start=1):
+        if not step_errors:
+            continue
+
+        for field, value in step_errors.items():
+            label = tk._("Step {number}").format(number=idx)
+
+            if field != "steps":
+                label = f"{label} — {field.replace('_', ' ')}"
+
+            rows.append({"label": label, "message": _message(value)})
+
+    return rows

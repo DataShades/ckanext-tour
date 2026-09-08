@@ -51,6 +51,36 @@ class TestMiscHelpers:
 
 
 @pytest.mark.usefixtures("with_plugins")
+class TestFlattenErrors:
+    def test_empty(self):
+        assert helpers.tour_flatten_errors(None) == []
+        assert helpers.tour_flatten_errors({}) == []
+
+    def test_top_level_error(self):
+        rows = helpers.tour_flatten_errors({"title": ["Missing value"]})
+
+        assert rows == [{"label": "Title", "message": "Missing value"}]
+
+    def test_step_errors_are_labelled_by_position(self):
+        rows = helpers.tour_flatten_errors(
+            {"steps": [{}, {"element": ["Missing value"], "image": "pick one"}]}
+        )
+
+        labels = {row["label"] for row in rows}
+
+        assert labels == {"Step 2 — element", "Step 2 — image"}
+        assert {row["message"] for row in rows} == {"Missing value", "pick one"}
+
+    def test_mixed_top_level_and_step_errors(self):
+        rows = helpers.tour_flatten_errors(
+            {"title": ["Missing value"], "steps": [{"element": ["Missing value"]}]}
+        )
+
+        assert {"label": "Title", "message": "Missing value"} in rows
+        assert {"label": "Step 1 — element", "message": "Missing value"} in rows
+
+
+@pytest.mark.usefixtures("with_plugins")
 class TestPageOptions:
     def test_first_option_is_everywhere(self, app):
         with app.flask_app.test_request_context("/"):

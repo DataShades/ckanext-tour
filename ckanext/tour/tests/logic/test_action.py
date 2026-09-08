@@ -52,6 +52,33 @@ class TestTourCreate:
         assert tour["endpoint"] == "dataset.read"
         assert tour["auto_start"] is True
 
+    def test_step_error_is_namespaced_under_steps(self, sysadmin):
+        """A step failure inside the action body must come back as
+        ``{"steps": [...]}`` so the form can point at the offending step."""
+        with pytest.raises(tk.ValidationError) as excinfo:
+            call_action(
+                "tour_create",
+                context={"user": sysadmin["name"]},
+                title="t",
+                author_id=sysadmin["id"],
+                steps=[
+                    {"title": "ok", "element": ".a", "intro": "i"},
+                    {
+                        "title": "bad",
+                        "element": ".b",
+                        "intro": "i",
+                        "image_upload": FakeFileStorage(),
+                        "image_url": "https://example.com/a.png",
+                    },
+                ],
+            )
+
+        errors = excinfo.value.error_dict
+
+        assert errors["steps"][0] == {}
+        assert "image" in errors["steps"][1]
+        assert not tour_model.Tour.all()
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourStepCreate:
@@ -191,6 +218,27 @@ class TestTourUpdate:
                 title="t",
                 state="deleted",
             )
+
+    def test_step_error_is_namespaced_under_steps(self, tour_factory):
+        tour = tour_factory(steps=[])
+
+        with pytest.raises(tk.ValidationError) as excinfo:
+            call_action(
+                "tour_update",
+                id=tour["id"],
+                title="t",
+                steps=[
+                    {
+                        "title": "bad",
+                        "element": ".b",
+                        "intro": "i",
+                        "image_upload": FakeFileStorage(),
+                        "image_url": "https://example.com/a.png",
+                    },
+                ],
+            )
+
+        assert "image" in excinfo.value.error_dict["steps"][0]
 
     def test_add_step_via_update(self, tour_factory):
         tour = tour_factory(steps=[])
