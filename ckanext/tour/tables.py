@@ -47,18 +47,18 @@ class TourTable(t.TableDefinition):
                     field="created_at",
                     formatters=[(t.formatters.DateFormatter, {"date_format": "%d %B %Y"})],
                 ),
-                t.ColumnDefinition(field="steps", title="Steps"),
+                t.ColumnDefinition(field="steps", title=tk._("Steps")),
             ],
             row_actions=[
                 t.RowActionDefinition(
                     action="edit",
-                    label="Edit",
+                    label=tk._("Edit"),
                     icon="fa fa-edit",
                     callback=self.row_action_edit,
                 ),
                 t.RowActionDefinition(
                     action="delete",
-                    label="Delete",
+                    label=tk._("Delete"),
                     icon="fa fa-trash",
                     callback=self.row_action_delete,
                     with_confirmation=True,
@@ -67,19 +67,19 @@ class TourTable(t.TableDefinition):
             bulk_actions=[
                 t.BulkActionDefinition(
                     action="remove_tours",
-                    label="Remove Selected Tours",
+                    label=tk._("Remove Selected Tours"),
                     icon="fa fa-trash",
                     callback=self.remove_tours,
                 ),
                 t.BulkActionDefinition(
                     action="disable_tours",
-                    label="Disable Selected Tours",
+                    label=tk._("Disable Selected Tours"),
                     icon="fa fa-ban",
                     callback=self.disable_tours,
                 ),
                 t.BulkActionDefinition(
                     action="enable_tours",
-                    label="Enable Selected Tours",
+                    label=tk._("Enable Selected Tours"),
                     icon="fa fa-check",
                     callback=self.enable_tours,
                 ),
@@ -87,7 +87,7 @@ class TourTable(t.TableDefinition):
             table_actions=[
                 t.TableActionDefinition(
                     action="add_tour",
-                    label="Add Tour",
+                    label=tk._("Add Tour"),
                     icon="fa fa-plus",
                     callback=self.table_action_add_tour,
                 ),

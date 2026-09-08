@@ -104,7 +104,7 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
                 {"id": tour.id},
             )
 
-            raise tk.ValidationError(e.error_dict if e else {}) from e
+            raise tk.ValidationError(e.error_dict) from e
 
     tour.reload_steps()
 

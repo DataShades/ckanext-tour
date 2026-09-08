@@ -19,7 +19,7 @@ class TourDeleteView(MethodView):
             tk.h.flash_error(str(e))
             return tk.redirect_to("tour.delete", tour_id=tour_id)
         else:
-            tk.h.flash_success("Done!")
+            tk.h.flash_success(tk._("The tour has been deleted."))
 
         return tk.redirect_to("tour.list")
 

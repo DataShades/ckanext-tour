@@ -1,8 +1,8 @@
 {
-    "name": "ckanext-issues",
+    "name": "ckanext-tour",
     "version": "0.0.1",
     "private": true,
-    "description": "Asset build pipeline for ckanext-issues",
+    "description": "Asset build pipeline for ckanext-tour",
     "main": "gulpfile.js",
     "license": "AGPL-3.0",
     "dependencies": {

@@ -21,7 +21,6 @@ class TourPlugin(plugins.SingletonPlugin):
 
     def update_config(self, config_):
         tk.add_template_directory(config_, "templates")
-        tk.add_public_directory(config_, "public")
         tk.add_resource("assets", "tour")
 
     def update_config_schema(self, schema):

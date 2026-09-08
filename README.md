@@ -41,8 +41,8 @@ Compatibility with core CKAN versions:
 
 | CKAN version    | Compatible?   |
 | --------------- | ------------- |
-| 2.9             | not tested    |
-| 2.10+           | yes           |
+| 2.11 and below  | no            |
+| 2.12+           | yes           |
 
 
 ## Installation

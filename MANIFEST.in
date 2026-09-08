@@ -1,5 +1,4 @@
-include README.rst
+include README.md
 include LICENSE
-include requirements.txt
-recursive-include ckanext/tour *.html *.json *.js *.less *.css *.mo *.yml
+recursive-include ckanext/tour *.html *.json *.js *.scss *.css *.mo *.yml *.yaml *.svg
 recursive-include ckanext/tour/migration *.ini *.py *.mako

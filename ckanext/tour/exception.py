@@ -1,2 +1,0 @@
-class TourStepFileError(Exception):
-    pass
