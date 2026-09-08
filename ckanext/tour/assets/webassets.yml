@@ -16,7 +16,7 @@ tour-css:
   output: ckanext-tour/%(version)s-tour.css
   contents:
     - css/vendor/shepherd.min.css
-    - css/style.css
+    - css/styles.css
 
 tour-draggable:
   filter: rjsmin

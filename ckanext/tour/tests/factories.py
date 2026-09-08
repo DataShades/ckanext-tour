@@ -1,5 +1,3 @@
-from io import BytesIO
-
 from factory.declarations import LazyFunction
 from factory.faker import Faker
 

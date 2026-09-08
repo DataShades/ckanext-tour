@@ -1,4 +1,6 @@
 def tour_manage(context, data_dict):
+    # Sysadmins bypass this check automatically. Override this auth function to
+    # grant tour management (list/create/edit/delete/settings) to other users.
     return {"success": False}
 
 

@@ -1,6 +1,6 @@
 version: 1
 groups:
-  - annotation: Admin panel example
+  - annotation: Tour settings
     options:
       - key: ckanext.tour.autoplay
         type: bool

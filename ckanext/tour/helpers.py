@@ -3,8 +3,14 @@ from __future__ import annotations
 import json
 import uuid
 
+import ckan.plugins as p
+
 from ckanext.tour import config
 from ckanext.tour.model import TourStep
+
+
+def tour_is_admin_panel_enabled() -> bool:
+    return p.plugin_loaded("admin_panel")
 
 
 def tour_get_position_options():

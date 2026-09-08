@@ -20,9 +20,7 @@ def tour_show(context: types.Context, data_dict: types.DataDict) -> dict[str, An
 
 @tk.side_effect_free
 @validate(schema.tour_list)
-def tour_list(
-    context: types.Context, data_dict: types.DataDict
-) -> list[dict[str, Any]]:
+def tour_list(context: types.Context, data_dict: types.DataDict) -> list[dict[str, Any]]:
     """Return a list of tours from database"""
     tk.check_access("tour_list", context, data_dict)
 
@@ -92,7 +90,6 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
 
     for step in steps:
-        print(step)
         action = "tour_step_update" if step.get("id") else "tour_step_create"
         step["tour_id"] = tour.id
 
@@ -107,9 +104,7 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
 
 
 @validate(schema.tour_step_schema)
-def tour_step_create(
-    context: types.Context, data_dict: types.DataDict
-) -> dict[str, Any]:
+def tour_step_create(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
     tk.check_access("tour_manage", context, data_dict)
 
     image_id = _upload_step_image(data_dict)
@@ -132,9 +127,7 @@ def _upload_step_image(data_dict: dict[str, Any]) -> str | None:
         return None
 
     if image_upload and image_url:
-        raise tk.ValidationError(
-            {"image": "Please provide either an image URL or upload a file, not both."}
-        )
+        raise tk.ValidationError({"image": "Please provide either an image URL or upload a file, not both."})
 
     result = tk.get_action("files_file_create")(
         {"ignore_auth": True},
@@ -148,9 +141,7 @@ def _upload_step_image(data_dict: dict[str, Any]) -> str | None:
 
 
 @validate(schema.tour_step_update)
-def tour_step_update(
-    context: types.Context, data_dict: types.DataDict
-) -> dict[str, Any]:
+def tour_step_update(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
     tk.check_access("tour_manage", context, data_dict)
 
     image_id = _upload_step_image(data_dict)
@@ -180,9 +171,7 @@ def tour_step_remove(context: types.Context, data_dict: types.DataDict) -> bool:
 
 
 @validate(schema.tour_upload_storage)
-def tour_upload_image(
-    context: types.Context, data_dict: types.DataDict
-) -> dict[str, Any]:
+def tour_upload_image(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
     tk.check_access("tour_manage", context, data_dict)
 
     return tk.get_action("files_file_create")(
@@ -195,9 +184,7 @@ def tour_upload_image(
 
 
 @validate(schema.tour_upload_storage)
-def tour_upload_link(
-    context: types.Context, data_dict: types.DataDict
-) -> dict[str, Any]:
+def tour_upload_link(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
     tk.check_access("tour_manage", context, data_dict)
 
     return tk.get_action("files_file_create")(

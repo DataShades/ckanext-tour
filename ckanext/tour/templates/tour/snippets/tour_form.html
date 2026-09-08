@@ -17,14 +17,14 @@
         {{ form.info(_('Optional. A path to a page, where tour will be applied. Note, that a page tour will be triggered automatically.', classes=['info-help-tight'])) }}
     {% endcall %}
 
-    <div class="form-actions js-form-wrapper form-wrapper mb-2">
-        <p class="m-0 me-auto d-flex align-items-center"><b>{{ _("Tour steps:") }}</b></p>
+    <div class="form-actions js-form-wrapper form-wrapper mb-3">
+        <p class="mb-2 mb-sm-0 me-auto d-flex align-items-center"><b>{{ _("Tour steps:") }}</b></p>
 
-        <button class="btn btn-primary" type="submit">{{ _("Create tour") if is_create else _("Update tour") }}</button>
-        <button class="btn btn-outline-secondary btn-collapse-steps" {% if collapse_step %}collapsed=1{% endif %} type="button">
+        <button class="btn btn-sm btn-primary" type="submit">{{ _("Create tour") if is_create else _("Update tour") }}</button>
+        <button class="btn btn-sm btn-outline-secondary btn-collapse-steps" {% if collapse_step %}collapsed=1{% endif %} type="button">
             {{ _("Expand all steps") if collapse_step else _("Collapse all steps") }}
         </button>
-        <button class="add-step btn btn-outline-secondary" hx-trigger="click" hx-post="{{ h.url_for('tour.add_step') }}" type="button"
+        <button class="add-step btn btn-sm btn-outline-secondary" hx-trigger="click" hx-post="{{ h.url_for('tour.add_step') }}" type="button"
             hx-vals='' hx-swap="outerHTML" hx-target=".next-tour">
             <i class="fa fa-plus"></i>
             {{ _("Add step") }}

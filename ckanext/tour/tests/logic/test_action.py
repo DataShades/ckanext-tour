@@ -158,7 +158,7 @@ class TestTourList:
 
         result = call_action("tour_list")
 
-        assert len(result) == 2
+        assert len(result) == 2  # noqa: PLR2004
 
         result = call_action("tour_list", state=tour_model.Tour.State.inactive)
 

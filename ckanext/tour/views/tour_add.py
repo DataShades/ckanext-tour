@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from flask import Blueprint, Response
+from flask import Response
 from flask.views import MethodView
 
 import ckan.plugins.toolkit as tk
-
-from ckanext.ap_main.utils import ap_before_request
-
-tour = Blueprint("tour", __name__)
-tour.before_request(ap_before_request)
 
 
 class TourAddView(MethodView):
@@ -41,13 +36,7 @@ class TourAddView(MethodView):
         return tk.redirect_to("tour.list")
 
     def _prepare_payload(self):
-        step_fields = (
-            "step_title",
-            "step_element",
-            "step_intro",
-            "step_position",
-            "step_image_id"
-        )
+        step_fields = ("step_title", "step_element", "step_intro", "step_position", "step_image_id")
 
         steps = {}
 

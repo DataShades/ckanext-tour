@@ -1,0 +1,65 @@
+{% extends 'tour/tour_base.html' %}
+
+{% import 'macros/form.html' as form %}
+
+{% set bool_options = [
+    {"value": "true", "text": _("Enabled")},
+    {"value": "false", "text": _("Disabled")},
+] %}
+
+{% block breadcrumb_content %}
+    <li>{% link_for _("Tour list"), named_route='tour.list' %}</li>
+    <li class="active">{% link_for _("Tour settings"), named_route='tour.config' %}</li>
+{% endblock breadcrumb_content %}
+
+{% block page_content %}
+    <h1 class="mb-3">{{ _("Tour settings") }}</h1>
+
+    {% if error_summary %}
+        <div class="error-explanation alert alert-danger">
+            <p>{{ _('The form contains invalid entries:') }}</p>
+            <ul>
+                {% for key, error in error_summary.items() %}
+                    <li>{{ key }}: {{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+
+    <form method="post" action="{{ h.url_for('tour.config') }}">
+        {{ h.csrf_input() }}
+
+        {% call form.select(
+            "ckanext.tour.autoplay",
+            label=_("Autoplay"),
+            options=bool_options,
+            selected=data["ckanext.tour.autoplay"] | string | lower,
+            error=errors.get("ckanext.tour.autoplay")
+        ) %}
+            {{ form.info(_("If enabled, the tour will start automatically when the page is loaded")) }}
+        {% endcall %}
+
+        {% call form.input(
+            "ckanext.tour.default_anchor",
+            label=_("Default anchor"),
+            value=data["ckanext.tour.default_anchor"],
+            error=errors.get("ckanext.tour.default_anchor")
+        ) %}
+            {{ form.info(_("The default anchor for the tour to attach to")) }}
+        {% endcall %}
+
+        {% call form.select(
+            "ckanext.tour.collapse_steps",
+            label=_("Collapse steps"),
+            options=bool_options,
+            selected=data["ckanext.tour.collapse_steps"] | string | lower,
+            error=errors.get("ckanext.tour.collapse_steps")
+        ) %}
+            {{ form.info(_("If enabled, the tour steps will be collapsed on edit/create")) }}
+        {% endcall %}
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{ _("Save settings") }}</button>
+        </div>
+    </form>
+{% endblock page_content %}

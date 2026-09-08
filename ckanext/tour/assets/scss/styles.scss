@@ -1,0 +1,43 @@
+@use 'variables.scss';
+@use 'elements.scss';
+
+body.tables-fullscreen {
+    .ckanext-datapreview {
+        flex-direction: column;
+        display: flex;
+
+        .tabulator-wrapper {
+            flex: 1;
+        }
+    }
+}
+
+.account-masthead .account .tour-dropdown {
+    border: var(--bs-dropdown-border-width) solid var(--bs-dropdown-border-color);
+
+  // fix midnight-blue bad dropdown styles
+  .dropdown-menu {
+    display: none;
+
+    &.show {
+      display: block;
+    }
+  }
+
+  li {
+    width: 100%;
+    border: unset;
+    padding: 0;
+
+    a {
+      font-weight: normal;
+      color: var(--bs-dropdown-link-color);
+      margin-left: 0;
+
+      &:hover {
+        background-color: var(--bs-dropdown-link-hover-bg);
+        color: var(--bs-dropdown-link-color);
+      }
+    }
+  }
+}

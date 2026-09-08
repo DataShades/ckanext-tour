@@ -1,0 +1,39 @@
+{% ckan_extends %}
+
+{#
+    When ckanext-admin-panel is enabled the tour management and settings pages
+    are reachable from the admin panel configuration section, so no extra header
+    entry is added. Without it, expose them here for users who may manage tours.
+#}
+{% block header_account_logged %}
+    {% if not h.tour_is_admin_panel_enabled() and h.check_access("tour_manage") %}
+        <li class="dropdown tour-dropdown">
+            <a href="#" class="dropdown-toggle" data-bs-toggle="dropdown" title="{{ _('Tour') }}">
+                <i class="fa fa-route" aria-hidden="true"></i>
+            </a>
+            <ul class="dropdown-menu">
+                <li>
+                    <a class="dropdown-item" href="{{ h.url_for('tour.list') }}">
+                        <i class="fa fa-list fa-fw" aria-hidden="true"></i>
+                        {{ _("Tours") }}
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{{ h.url_for('tour.add') }}">
+                        <i class="fa fa-plus fa-fw" aria-hidden="true"></i>
+                        {{ _("Add tour") }}
+                    </a>
+                </li>
+                <li><hr class="dropdown-divider"></li>
+                <li>
+                    <a class="dropdown-item" href="{{ h.url_for('tour.config') }}">
+                        <i class="fa fa-cog fa-fw" aria-hidden="true"></i>
+                        {{ _("Settings") }}
+                    </a>
+                </li>
+            </ul>
+        </li>
+    {% endif %}
+
+    {{ super() }}
+{% endblock header_account_logged %}

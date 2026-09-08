@@ -1,6 +1,13 @@
-{% extends 'admin_panel/base.html' %}
+{% extends "page.html" %}
 
-{% block ap_content %}
-    {% block page_content %}
-    {% endblock page_content %}
-{% endblock ap_content %}
+{% block page_header %}{% endblock %}
+
+{% block secondary %}{% endblock %}
+
+{% block primary %}
+    <div class="p-3 ckanext-datapreview" role="main">
+        {% block primary_content_inner %}
+            {{ self.page_content() }}
+        {% endblock primary_content_inner %}
+    </div>
+{% endblock %}

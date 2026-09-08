@@ -3,6 +3,7 @@ from __future__ import annotations
 from sqlalchemy import select, func
 
 import ckan.plugins.toolkit as tk
+from ckan.types import Context
 
 import ckanext.tables.shared as t
 
@@ -10,6 +11,10 @@ from ckanext.tour.model import Tour, TourStep
 
 
 class TourTable(t.TableDefinition):
+    @classmethod
+    def check_access(cls, context: Context) -> None:
+        tk.check_access("tour_manage", context)
+
     def __init__(self):
         steps_count = (
             select(TourStep.tour_id, func.count(TourStep.id).label("steps")).group_by(TourStep.tour_id).subquery()
@@ -79,6 +84,20 @@ class TourTable(t.TableDefinition):
                     callback=self.enable_tours,
                 ),
             ],
+            table_actions=[
+                t.TableActionDefinition(
+                    action="add_tour",
+                    label="Add Tour",
+                    icon="fa fa-plus",
+                    callback=self.table_action_add_tour,
+                ),
+            ],
+        )
+
+    def table_action_add_tour(self) -> t.ActionHandlerResult:
+        return t.ActionHandlerResult(
+            success=True,
+            redirect=tk.url_for("tour.add"),
         )
 
     def row_action_edit(self, row: t.Row) -> t.ActionHandlerResult:

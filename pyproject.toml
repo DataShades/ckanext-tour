@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ckanext-tour"
-version = "1.0.0"
+version = "1.1.0"
 description = "Create an interactive tour that will help users familiarize themselves with the important features of your portal"
 authors = [
     {name = "DataShades", email = "datashades@linkdigital.com.au"},
@@ -23,7 +23,10 @@ classifiers = [
 
 ]
 keywords = ["CKAN"]
-dependencies = []
+dependencies = [
+    "ckanext-tables>=1.21.6",
+    "ckanext-files>=1.3.0",
+]
 optional-dependencies = {}
 
 [project.readme]
@@ -87,7 +90,8 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"ckanext/$PLUGIN/tests*" = ["S", "PL"]
+"ckanext/tour/tests*" = ["S", "PL"]
+"ckanext/tour/logic/schema.py" = ["PLR0913", "PLR0917"]
 
 [tool.ruff.lint.isort.sections]
 ckan = ["ckan"]

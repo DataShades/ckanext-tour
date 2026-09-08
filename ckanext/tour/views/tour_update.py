@@ -1,15 +1,10 @@
 from __future__ import annotations
 
-from flask import Blueprint, Response
+from flask import Response
 from flask.views import MethodView
 
 import ckan.plugins.toolkit as tk
 from ckan import types
-
-from ckanext.ap_main.utils import ap_before_request
-
-tour = Blueprint("tour", __name__)
-tour.before_request(ap_before_request)
 
 
 class TourUpdateView(MethodView):

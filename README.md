@@ -1,4 +1,4 @@
-[![Tests](https://github.com/DataShades/ckanext-tour/workflows/Tests/badge.svg?branch=main)](https://github.com/DataShades/ckanext-tour/actions)
+[![Tests](https://github.com/DataShades/ckanext-tour/actions/workflows/test.yml/badge.svg)](https://github.com/DataShades/ckanext-tour/actions/workflows/test.yml)
 
 # ckanext-tour
 
@@ -59,9 +59,15 @@ To install ckanext-tour:
     cd ckanext-tour
     pip install -e .
     ```
-3. Add `tour` to the `ckan.plugins` setting in your CKAN
+3. Add `tables files file_upload_widget tour` to the `ckan.plugins` setting in your CKAN
    config file (by default the config file is located at
    `/etc/ckan/default/ckan.ini`).
+
+   The tour list is rendered with
+   [ckanext-tables](https://github.com/DataShades/ckanext-tables), which is
+   installed automatically as a dependency and must be enabled alongside `tour`.
+
+   The `file_upload_widget` plugin is required for the file upload functionality.
 
 4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu:
 
@@ -72,20 +78,33 @@ To install ckanext-tour:
 To store tour images, you need to configure file storage for the extension. Add the following settings to your `ckan.ini` file:
 
 ```ini
-ckanext.files.storage.tour_image.type = files:public_fs
-ckanext.files.storage.tour_image.path = %(ckan.storage_path)s/storage/tours
-ckanext.files.storage.tour_image.initialize = true
-ckanext.files.storage.tour_image.public_prefix = /tours
-ckanext.files.storage.tour_image.max_size = 10MiB
-ckanext.files.storage.tour_image.supported_types = image
+ckan.files.storage.tour_image.type = files:public_fs
+ckan.files.storage.tour_image.path = %(ckan.storage_path)s/storage/tours
+ckan.files.storage.tour_image.initialize = true
+ckan.files.storage.tour_image.public_prefix = /tours
+ckan.files.storage.tour_image.max_size = 10MiB
+ckan.files.storage.tour_image.supported_types = image/png image/jpeg image/gif image/webp image/svg+xml
+ckan.files.storage.tour_image.location_transformers = uuid4_with_extension
 
-ckanext.files.storage.tour_link.type = files:link
-ckanext.files.storage.tour_link.timeout = 5
+ckan.files.storage.tour_link.type = files:link
+ckan.files.storage.tour_link.timeout = 5
 ```
 
 ## Config settings
 
-To modify the configuration of the extension, please make the changes through the site's user interface.
+```ini
+# Start the tour automatically when the anchored page is loaded (default: false)
+ckanext.tour.autoplay = false
+
+# Default anchor element the tour attaches to (default: .breadcrumb .active)
+ckanext.tour.default_anchor = .breadcrumb .active
+
+# Collapse tour steps on the edit/create form (default: true)
+ckanext.tour.collapse_steps = true
+```
+
+These options are runtime-editable and can also be changed from the tour
+**Settings** page.
 
 ## Tests
 

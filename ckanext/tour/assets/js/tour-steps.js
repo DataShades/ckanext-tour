@@ -41,16 +41,16 @@ ckan.module("tour-steps", function ($) {
                 if (evt.detail.path.includes("/tour/delete_step")) {
                     evt.preventDefault();
 
-                    swal({
-                        text: "Are you sure you wish to delete a step?",
-                        icon: "warning",
-                        buttons: true,
-                        dangerMode: true,
-                    }).then((confirmed) => {
-                        if (confirmed) {
+                    ckan.confirm({
+                        message: "Are you sure you wish to delete a step?",
+                        title: "Confirm deletion",
+                        icon: "<i class='fa fa-trash me-2'></i>",
+                        confirmText: "Delete",
+                        type: "danger",
+                        onConfirm: function () {
                             self._onRemoveStep(evt.detail.target.dataset.stepId);
                             evt.detail.issueRequest();
-                        }
+                        },
                     });
                 }
             });
