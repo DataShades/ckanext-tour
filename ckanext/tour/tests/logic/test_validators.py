@@ -43,6 +43,27 @@ class TestTourUrlValidator:
         assert errors[("image_url",)] == []
 
 
+class TestTourSelectorValidator:
+    @pytest.mark.parametrize(
+        "selector",
+        ["#step-1", ".foo > .bar", "[data-x='y']", "a.link:hover", "", None],
+    )
+    def test_plausible_selectors_pass(self, selector):
+        assert validators.tour_selector_validator(selector) == selector
+
+    @pytest.mark.parametrize(
+        "selector",
+        [
+            "<img src=x onerror=alert(1)>",
+            "<script>alert(1)</script>",
+            ".foo<bar",
+        ],
+    )
+    def test_html_like_values_rejected(self, selector):
+        with pytest.raises(tk.Invalid, match="cannot contain"):
+            validators.tour_selector_validator(selector)
+
+
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestExistenceValidators:
     def test_tour_exists(self, tour_factory):

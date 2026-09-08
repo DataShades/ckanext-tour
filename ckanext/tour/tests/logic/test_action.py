@@ -29,6 +29,16 @@ class TestTourCreate:
         assert tour["steps"][0]["image_url"] == ""
         assert tour["steps"][0]["tour_id"] == tour["id"]
 
+    def test_html_like_anchor_rejected(self, sysadmin):
+        with pytest.raises(tk.ValidationError, match="cannot contain"):
+            call_action(
+                "tour_create",
+                title="t",
+                anchor="<script>alert(1)</script>",
+                author_id=sysadmin["id"],
+                steps=[],
+            )
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourStepCreate:
@@ -52,6 +62,14 @@ class TestTourStepCreate:
 
         with pytest.raises(tk.ValidationError, match="Missing value"):
             tour_step_factory(tour_id=tour["id"], element=None)
+
+    def test_html_like_element_rejected(self, tour_factory, tour_step_factory):
+        tour = tour_factory(steps=[])
+
+        with pytest.raises(tk.ValidationError, match="cannot contain"):
+            tour_step_factory(
+                tour_id=tour["id"], element="<img src=x onerror=alert(1)>"
+            )
 
     def test_error_on_child_should_clear_parent(self, sysadmin):
         """Test error on creating step should not create the tour.

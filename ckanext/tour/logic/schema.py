@@ -24,13 +24,14 @@ def tour_create(
     one_of,
     ignore,
     tour_duplicate_anchor,
+    tour_selector_validator,
 ) -> Schema:
     step_schema = tour_step_schema()
     step_schema["tour_id"] = [ignore_missing]
 
     return {
         "title": [not_empty, unicode_safe],
-        "anchor": [ignore_missing, unicode_safe, tour_duplicate_anchor],
+        "anchor": [ignore_missing, unicode_safe, tour_selector_validator, tour_duplicate_anchor],
         "page": [ignore_missing, unicode_safe],
         "author_id": [not_empty, user_id_or_name_exists],
         "state": [
@@ -67,10 +68,11 @@ def tour_step_schema(  # noqa: PLR0913
     one_of,
     tour_tour_exist,
     tour_url_validator,
+    tour_selector_validator,
 ) -> Schema:
     return {
         "title": [ignore_missing, unicode_safe],
-        "element": [not_empty, unicode_safe],
+        "element": [not_empty, unicode_safe, tour_selector_validator],
         "intro": [ignore_missing, unicode_safe],
         "position": [
             default(TourStep.Position.bottom),

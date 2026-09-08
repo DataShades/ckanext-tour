@@ -67,3 +67,16 @@ def tour_duplicate_anchor(
 
     if result and result.id != data.get(("id",)):
         raise tk.Invalid(f"The tour step with an anchor `{data[key]}` already exists.")
+
+
+def tour_selector_validator(value: Any) -> Any:
+    """Reject a value a browser would parse as HTML rather than a CSS selector.
+
+    The tour ``anchor`` and step ``element`` end up in ``$(value)`` /
+    ``document.querySelector(value)`` on every visitor's page; a leading ``<``
+    makes jQuery build DOM nodes instead of matching, so refuse it here.
+    """
+    if value and "<" in str(value):
+        raise tk.Invalid(tk._("A CSS selector cannot contain '<'"))
+
+    return value

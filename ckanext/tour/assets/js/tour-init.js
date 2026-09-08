@@ -42,6 +42,29 @@ this.ckan.module('tour-init', function (jQuery) {
         },
 
         /**
+         * Return `selector` only if it is a string that a browser can use as a
+         * CSS selector; otherwise null. Guards against `anchor` / `element`
+         * values that jQuery would parse as HTML (`<...>`) or that are not
+         * valid selector syntax (which would otherwise throw and abort the tour).
+         *
+         * @param {*} selector
+         * @returns {string|null}
+         */
+        _safeSelector: function (selector) {
+            if (typeof selector !== "string" || selector.indexOf("<") !== -1) {
+                return null;
+            }
+
+            try {
+                document.querySelector(selector);
+            } catch (e) {
+                return null;
+            }
+
+            return selector;
+        },
+
+        /**
          * Creates a tour mark if not exist
          *
          * @returns
@@ -63,7 +86,8 @@ this.ckan.module('tour-init', function (jQuery) {
 
             var shouldAttach = isActive && !introData.page;
             var shouldStart = isActive && !showed && !this.isMobile && window.location.pathname == introData.page;
-            var anchorExists = $(introData.anchor).length;
+            var anchorSelector = this._safeSelector(introData.anchor);
+            var anchorExists = anchorSelector && document.querySelector(anchorSelector) !== null;
 
             this.tour = new Shepherd.Tour({
                 useModalOverlay: true,
@@ -120,7 +144,14 @@ this.ckan.module('tour-init', function (jQuery) {
             if (shouldAttach) {
                 this.createMark();
 
-                this.mark.insertAfter(anchorExists ? introData.anchor : this.options.config.default_anchor);
+                var target = anchorExists
+                    ? anchorSelector
+                    : this._safeSelector(this.options.config.default_anchor);
+
+                if (target) {
+                    this.mark.insertAfter(target);
+                }
+
                 this.mark.on('click', this._onClick);
             }
 
@@ -161,10 +192,15 @@ this.ckan.module('tour-init', function (jQuery) {
                     }
                 ]
 
-                step.attachTo = {
-                    element: step.element,
-                    on: step.position
+                var stepSelector = this._safeSelector(step.element);
+                if (stepSelector) {
+                    step.attachTo = {
+                        element: stepSelector,
+                        on: step.position
+                    };
                 }
+                // an unsafe/invalid selector leaves the step unattached, so
+                // Shepherd renders it as a centered modal instead of throwing
             });
 
             return steps;
