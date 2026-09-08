@@ -2,9 +2,14 @@ from __future__ import annotations
 
 from typing import Any, cast
 
+from sqlalchemy import select
+
 import ckan.plugins.toolkit as tk
 from ckan import model, types
 from ckan.logic import validate
+from ckan.model.types import make_uuid
+
+from ckanext.files.shared import make_upload
 
 from ckanext.tour.logic import schema
 from ckanext.tour.model import Tour, TourStep
@@ -21,17 +26,25 @@ def tour_show(context: types.Context, data_dict: types.DataDict) -> dict[str, An
 @tk.side_effect_free
 @validate(schema.tour_list)
 def tour_list(context: types.Context, data_dict: types.DataDict) -> list[dict[str, Any]]:
-    """Return a list of tours from database"""
+    """Return a list of tours from the database.
+
+    :param state: optionally keep only ``active`` or ``inactive`` tours
+    :param fl: optional field list (a list, or a comma/space separated string)
+        restricting the keys returned per tour, like ``fl`` in
+        ``package_search``. Omitting ``steps`` also skips loading them.
+    """
     tk.check_access("tour_list", context, data_dict)
 
-    query = model.Session.query(Tour)
+    stmt = select(Tour)
 
     if data_dict.get("state"):
-        query = query.filter(Tour.state == data_dict["state"])
+        stmt = stmt.where(Tour.state == data_dict["state"])
 
-    query = query.order_by(Tour.created_at.desc())
+    stmt = stmt.order_by(Tour.created_at.desc())
 
-    return [tour.dictize(context) for tour in query.all()]
+    fields = data_dict.get("fl")
+
+    return [tour.dictize(context, fields) for tour in model.Session.scalars(stmt)]
 
 
 @validate(schema.tour_create)
@@ -56,6 +69,8 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
             )
 
             raise tk.ValidationError(e.error_dict if e else {}) from e
+
+    tour.reload_steps()
 
     return tour.dictize(context)
 
@@ -100,6 +115,8 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
 
     model.Session.commit()
 
+    tour.reload_steps()
+
     return tour.dictize(context)
 
 
@@ -112,8 +129,7 @@ def tour_step_create(context: types.Context, data_dict: types.DataDict) -> dict[
     if image_id:
         data_dict["image_id"] = image_id
 
-    tour = cast(Tour, Tour.get(data_dict["tour_id"]))
-    data_dict["index"] = len(tour.steps) + 1
+    data_dict["index"] = TourStep.next_index(data_dict["tour_id"])
     tour_step = TourStep.create(data_dict)
 
     return tour_step.dictize(context)
@@ -129,13 +145,18 @@ def _upload_step_image(data_dict: dict[str, Any]) -> str | None:
     if image_upload and image_url:
         raise tk.ValidationError({"image": "Please provide either an image URL or upload a file, not both."})
 
-    result = tk.get_action("files_file_create")(
-        {"ignore_auth": True},
-        {
-            "upload": image_upload or image_url,
-            "storage": "tour_image" if image_upload else "tour_link",
-        },
-    )
+    if image_upload:
+        payload = {"upload": image_upload, "storage": "tour_image"}
+    else:
+        # the `files:link` storage reads the URL from the upload's stream, so
+        # the raw string has to be wrapped into an Upload with a unique name
+        payload = {
+            "upload": make_upload(str(image_url).encode()),
+            "name": make_uuid(),
+            "storage": "tour_link",
+        }
+
+    result = tk.get_action("files_file_create")({"ignore_auth": True}, payload)
 
     return result["id"]
 

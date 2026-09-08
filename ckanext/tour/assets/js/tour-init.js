@@ -21,6 +21,10 @@ this.ckan.module('tour-init', function (jQuery) {
 
             $.ajax({
                 url: this.sandbox.url("/api/action/tour_list"),
+                // only active tours, and only the fields this widget reads
+                // (fl is repeated per field, like package_search)
+                data: { state: "active", fl: ["id", "state", "anchor", "page", "steps"] },
+                traditional: true,
                 cache: false,
                 success: this._onSuccessRequest,
             });

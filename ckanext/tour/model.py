@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 from typing import Any, Self, cast
 
-from sqlalchemy import CursorResult, ForeignKey, Text, select, update
+from sqlalchemy import CursorResult, ForeignKey, Text, func, select, update
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ckan import model, types
@@ -60,12 +60,33 @@ class Tour(tk.BaseModel):
 
         return tour
 
+    def reload_steps(self) -> None:
+        """Drop the cached ``steps`` collection so the next access reloads it.
+
+        ``steps`` is ``lazy="selectin"``, so it is (re)populated whenever this
+        ``Tour`` is loaded — which in a create/update flow happens *before* the
+        steps are written through ``tour_step_create``. Callers that create or
+        change steps and then serialise the tour must call this first.
+        """
+        model.Session.expire(self, ["steps"])
+
     def delete(self) -> None:
         model.Session().autoflush = False
         model.Session.delete(self)
 
-    def dictize(self, context: types.Context) -> dict[str, Any]:
-        return {
+    def dictize(
+        self,
+        context: types.Context,
+        fields: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Serialise the tour.
+
+        ``fields`` (the ``fl`` action argument) optionally restricts the output
+        to those keys; names that are not tour fields are ignored, and when
+        ``"steps"`` is absent the step collection is not loaded or serialised at
+        all. ``None`` returns every field.
+        """
+        data: dict[str, Any] = {
             "id": self.id,
             "title": self.title,
             "author_id": self.author_id,
@@ -74,8 +95,15 @@ class Tour(tk.BaseModel):
             "modified_at": self.modified_at.isoformat(),
             "anchor": self.anchor or "",
             "page": self.page or "",
-            "steps": [step.dictize(context) for step in self.steps],
         }
+
+        if fields is None or "steps" in fields:
+            data["steps"] = [step.dictize(context) for step in self.steps]
+
+        if fields is None:
+            return data
+
+        return {key: data[key] for key in fields if key in data}
 
     @classmethod
     def get(cls, tour_id: str) -> Self | None:
@@ -106,11 +134,7 @@ class Tour(tk.BaseModel):
         if not ids:
             return 0
 
-        stmt = (
-            update(cls)
-            .where(cls.id.in_(ids))
-            .values(state=state, modified_at=datetime.utcnow())
-        )
+        stmt = update(cls).where(cls.id.in_(ids)).values(state=state, modified_at=datetime.utcnow())
         result = cast("CursorResult[Any]", model.Session.execute(stmt))
         model.Session.commit()
 
@@ -167,9 +191,24 @@ class TourStep(tk.BaseModel):
 
         return list(model.Session.scalars(stmt).all())
 
+    @classmethod
+    def next_index(cls, tour_id: str) -> int:
+        """Index to give the next step appended to ``tour_id``.
+
+        Uses ``MAX(index) + 1`` (via a query, so it does not force-load the
+        parent's ``steps`` collection) rather than a count, so gaps left by
+        deleted steps don't cause a collision.
+        """
+        stmt = select(func.max(cls.index)).where(cls.tour_id == tour_id)
+
+        return (model.Session.scalar(stmt) or 0) + 1
+
     @property
     def image(self) -> str:
-        file_info = tk.h.files_link_details(self.image_id or "")
+        if not self.image_id:
+            return ""
+
+        file_info = tk.h.files_link_details(self.image_id)
 
         if not file_info:
             return ""

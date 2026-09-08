@@ -1,12 +1,16 @@
-from werkzeug.datastructures import FileStorage as MockFileStorage  # noqa
+from io import BytesIO
 
-IMAGE_DATA = b"a,b,c,d\n1,2,3,4"
+from werkzeug.datastructures import FileStorage
+
+# tiny valid-enough PNG header + filler; content is not inspected by the
+# in-memory test storage, only its size/name matter
+IMAGE_DATA = b"\x89PNG\r\n\x1a\n" + b"0" * 64
 
 
-class FakeFileStorage(MockFileStorage):
-    content_type = None
+class FakeFileStorage(FileStorage):
+    """A ``werkzeug`` upload the ``files`` extension will accept."""
 
-    def __init__(self, stream, filename):
-        self.stream = stream
-        self.filename = filename
-        self.name = "upload"
+    def __init__(self, stream=None, filename="image.png", content_type="image/png"):
+        if stream is None:
+            stream = BytesIO(IMAGE_DATA)
+        super().__init__(stream, filename, "upload", content_type=content_type)

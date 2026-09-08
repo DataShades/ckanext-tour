@@ -110,9 +110,10 @@ def tour_step_update(
 
 
 @validator_args
-def tour_list(ignore_empty, one_of) -> Schema:
+def tour_list(ignore_empty, one_of, convert_to_list_if_string) -> Schema:
     return {
         "state": [ignore_empty, one_of([Tour.State.active, Tour.State.inactive])],
+        "fl": [ignore_empty, convert_to_list_if_string],
     }
 
 

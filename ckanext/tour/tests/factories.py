@@ -1,4 +1,4 @@
-from factory.declarations import LazyFunction
+from factory.declarations import LazyAttribute, LazyFunction
 from factory.faker import Faker
 
 from ckan.tests import factories
@@ -30,4 +30,4 @@ class TourFactory(factories.CKANFactory):
     anchor = Faker("sentence")
     page = "/dataset"
     author_id = LazyFunction(lambda: factories.User()["id"])  # type: ignore
-    steps = LazyFunction(lambda self: [vars(TourStepFactory.stub(tour_id=self.id))])
+    steps = LazyAttribute(lambda o: [vars(TourStepFactory.stub(tour_id=o.id))])

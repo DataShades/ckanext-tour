@@ -16,20 +16,16 @@ class Status(IntEnum):
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestTourConfigView:
     def test_settings_page_renders_for_sysadmin(self, app, sysadmin):
-        env = {"REMOTE_USER": sysadmin["name"]}
-        resp = app.get(tk.url_for("tour.config"), extra_environ=env)
+        resp = app.get(tk.url_for("tour.config"), headers={"Authorization": sysadmin["token"]})
 
         assert resp.status_code == Status.success
 
     def test_settings_page_forbidden_for_regular_user(self, app, user):
-        env = {"REMOTE_USER": user["name"]}
-        resp = app.get(tk.url_for("tour.config"), extra_environ=env, status=Status.forbidden)
+        resp = app.get(tk.url_for("tour.config"), headers={"Authorization": user["token"]}, status=Status.forbidden)
 
         assert resp.status_code == Status.forbidden
 
     def test_settings_update_persists_options(self, app, sysadmin):
-        env = {"REMOTE_USER": sysadmin["name"]}
-
         app.post(
             tk.url_for("tour.config"),
             data={
@@ -37,33 +33,31 @@ class TestTourConfigView:
                 config.CONF_DEFAULT_ANCHOR: ".custom-anchor",
                 config.CONF_COLLAPSE_STEPS: "false",
             },
-            extra_environ=env,
+            headers={"Authorization": sysadmin["token"]},
         )
 
-        assert tk.config[config.CONF_AUTOPLAY] is True
-        assert tk.config[config.CONF_DEFAULT_ANCHOR] == ".custom-anchor"
-        assert tk.config[config.CONF_COLLAPSE_STEPS] is False
+        # assert via the helpers: CKAN stores runtime-editable options back as
+        # raw strings, so tk.config[...] is not the coerced value
+        assert config.is_auto_play_enabled() is True
+        assert config.get_default_anchor() == ".custom-anchor"
+        assert config.is_collapse_steps_enabled() is False
 
 
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestTourListView:
     def test_list_page_renders_for_sysadmin(self, app, sysadmin):
-        env = {"REMOTE_USER": sysadmin["name"]}
-        resp = app.get(tk.url_for("tour.list"), extra_environ=env)
+        resp = app.get(tk.url_for("tour.list"), headers={"Authorization": sysadmin["token"]})
 
         assert resp.status_code == Status.success
 
     def test_list_page_forbidden_for_regular_user(self, app, user):
-        env = {"REMOTE_USER": user["name"]}
-        app.get(tk.url_for("tour.list"), extra_environ=env, status=Status.forbidden)
+        app.get(tk.url_for("tour.list"), headers={"Authorization": user["token"]}, status=Status.forbidden)
 
     def test_add_tour_table_action_redirects_to_add_page(self, app, sysadmin):
-        env = {"REMOTE_USER": sysadmin["name"]}
-
         resp = app.post(
             tk.url_for("tour.list"),
             data={"table_action": "add_tour"},
-            extra_environ=env,
+            headers={"Authorization": sysadmin["token"]},
         )
 
         assert resp.json["success"] is True

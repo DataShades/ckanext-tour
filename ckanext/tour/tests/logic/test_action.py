@@ -1,9 +1,11 @@
 import pytest
+import responses
 
 import ckan.plugins.toolkit as tk
 from ckan.tests.helpers import call_action
 
 import ckanext.tour.model as tour_model
+from ckanext.tour.tests.helpers import FakeFileStorage
 
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
@@ -21,10 +23,10 @@ class TestTourCreate:
         assert tour["state"] == tour_model.Tour.State.active
         assert tour["steps"][0]["id"]
         assert tour["steps"][0]["element"]
-        assert tour["steps"][0]["image"]
         assert tour["steps"][0]["intro"]
         assert tour["steps"][0]["position"]
         assert tour["steps"][0]["title"]
+        assert tour["steps"][0]["image_url"] == ""
         assert tour["steps"][0]["tour_id"] == tour["id"]
 
 
@@ -45,18 +47,7 @@ class TestTourStepCreate:
         with pytest.raises(tk.ValidationError, match="Value must be one of"):
             tour_step_factory(tour_id=tour["id"], position="xxx")
 
-    def test_upload_image(self, tour_factory, tour_step_factory, tour_image_data):
-        tour = tour_factory(steps=[])
-
-        assert tour_step_factory(tour_id=tour["id"], image=[tour_image_data()])
-
-    def test_upload_multiple_image(self, tour_factory, tour_step_factory, tour_image_data):
-        tour = tour_factory(steps=[])
-
-        with pytest.raises(tk.ValidationError, match="only 1 image for step allowed"):
-            tour_step_factory(tour_id=tour["id"], image=[tour_image_data(), tour_image_data()])
-
-    def test_missing_element(self, tour_factory, tour_step_factory, tour_image_data):
+    def test_missing_element(self, tour_factory, tour_step_factory):
         tour = tour_factory(steps=[])
 
         with pytest.raises(tk.ValidationError, match="Missing value"):
@@ -168,40 +159,177 @@ class TestTourList:
         with pytest.raises(tk.ValidationError, match="Value must be one of"):
             call_action("tour_list", state="deleted")
 
+    def test_no_fl_returns_every_field(self, tour_factory):
+        tour_factory(steps=[])
+
+        result = call_action("tour_list")
+
+        assert set(result[0]) == {
+            "id",
+            "title",
+            "author_id",
+            "state",
+            "created_at",
+            "modified_at",
+            "anchor",
+            "page",
+            "steps",
+        }
+
+    def test_fl_as_list_limits_fields(self, tour_factory):
+        tour_factory(steps=[])
+
+        result = call_action("tour_list", fl=["id", "anchor"])
+
+        assert set(result[0]) == {"id", "anchor"}
+
+    def test_fl_as_single_string_field(self, tour_factory):
+        tour_factory(steps=[])
+
+        result = call_action("tour_list", fl="id")
+
+        assert set(result[0]) == {"id"}
+
+    def test_fl_without_steps_omits_them(self, tour_factory):
+        tour_factory(steps=[])
+
+        result = call_action("tour_list", fl=["id"])
+
+        assert "steps" not in result[0]
+
+    def test_fl_with_steps_includes_them(self, tour_factory, tour_step_factory):
+        tour = tour_factory(steps=[])
+        tour_step_factory(tour_id=tour["id"])
+
+        result = call_action("tour_list", fl=["id", "steps"])
+
+        assert [step["id"] for step in result[0]["steps"]]
+
+    def test_fl_ignores_unknown_fields(self, tour_factory):
+        tour_factory(steps=[])
+
+        result = call_action("tour_list", fl=["id", "bogus"])
+
+        assert set(result[0]) == {"id"}
+
+    def test_fl_deduplicates(self, tour_factory):
+        tour_factory(steps=[])
+
+        result = call_action("tour_list", fl=["id", "id", "state"])
+
+        assert set(result[0]) == {"id", "state"}
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
-class TestStepImageCreate:
-    """Each step could have 1 image.
+class TestTourStepImage:
+    """A step can carry one image, from an uploaded file or a URL."""
 
-    It could be created either from uploaded file, or by URL
-    """
+    def _tour(self, sysadmin):
+        return call_action(
+            "tour_create",
+            context={"user": sysadmin["name"]},
+            title="t",
+            anchor="#a",
+            page="/p",
+            author_id=sysadmin["id"],
+            steps=[],
+        )
 
-    def test_create_from_url(self, tour_step, tour_step_image_factory):
-        """You should be able to create a step image entity from a URL.
+    def test_from_upload(self, sysadmin):
+        tour = self._tour(sysadmin)
 
-        We are not checking that this URL somehow related to an image, it's up
-        to user
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            image_upload=FakeFileStorage(),
+        )
 
-        We are not validating URL, because if user choose to upload a file,
-        the URL will be a filename which is obviosly not a valid URL.
+        assert step["image_id"]
 
-        """
-        image_from_url = tour_step_image_factory(tour_step_id=tour_step["id"], url="https://image.url", upload=None)
+    @responses.activate
+    def test_from_url(self, sysadmin):
+        responses.add_passthru("http://127.0.0.1:8983")
+        responses.head(
+            "https://example.com/a.png",
+            headers={"content-type": "image/png", "content-length": "72"},
+        )
+        tour = self._tour(sysadmin)
 
-        assert not image_from_url["file_id"]
-        assert image_from_url["url"] == "https://image.url"
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            image_url="https://example.com/a.png",
+        )
 
-    def test_create_from_file(self, tour_step, tour_step_image_factory):
-        """You should be able to create a step image entity from a real file.
+        assert step["image_id"]
+        assert step["image_url"] == "https://example.com/a.png"
 
-        The factory has a mock file object by default.
-        """
-        image_from_file = tour_step_image_factory(tour_step_id=tour_step["id"])
+    def test_both_sources_rejected(self, sysadmin):
+        tour = self._tour(sysadmin)
 
-        assert image_from_file["file_id"]
-        assert image_from_file["url"]
+        with pytest.raises(tk.ValidationError, match="either an image URL or upload"):
+            call_action(
+                "tour_step_create",
+                context={"user": sysadmin["name"]},
+                tour_id=tour["id"],
+                title="s",
+                element=".x",
+                intro="i",
+                image_upload=FakeFileStorage(),
+                image_url="https://example.com/a.png",
+            )
 
-    def test_create_from_nothing(self, tour_step, tour_step_image_factory):
-        """You have to provide at least 1 source of image."""
-        with pytest.raises(tk.ValidationError, match="You have to provide either file or URL"):
-            tour_step_image_factory(tour_step_id=tour_step["id"], url=None, upload=None)
+    def test_no_source_leaves_image_empty(self, sysadmin):
+        tour = self._tour(sysadmin)
+
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+        )
+
+        assert not step["image_id"]
+
+    @responses.activate
+    def test_replacing_image_on_update(self, sysadmin):
+        responses.add_passthru("http://127.0.0.1:8983")
+        responses.head(
+            "https://example.com/a.png",
+            headers={"content-type": "image/png"},
+        )
+        tour = self._tour(sysadmin)
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            image_upload=FakeFileStorage(),
+        )
+        original = step["image_id"]
+
+        updated = call_action(
+            "tour_step_update",
+            context={"user": sysadmin["name"]},
+            id=step["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            position="bottom",
+            image_url="https://example.com/a.png",
+        )
+
+        assert updated["image_id"]
+        assert updated["image_id"] != original
