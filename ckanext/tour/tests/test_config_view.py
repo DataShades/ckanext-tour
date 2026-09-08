@@ -10,6 +10,7 @@ from ckanext.tour.model import Tour
 
 class Status(IntEnum):
     success = 200
+    redirect = 302
     forbidden = 403
     not_found = 404
 
@@ -120,18 +121,25 @@ class TestTourFormViews:
     def test_delete_post_removes_the_tour(self, app, sysadmin, tour_factory):
         tour = tour_factory(steps=[])
 
-        app.post(
+        resp = app.post(
             tk.url_for("tour.delete", tour_id=tour["id"]),
             headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
         )
 
+        assert resp.status_code == Status.redirect
+        assert tk.url_for("tour.list") in resp.headers["location"]
         assert Tour.get(tour["id"]) is None
 
     def test_delete_post_missing_tour_does_not_500(self, app, sysadmin):
+        # a missing tour must redirect back to the list, not 500 (B1). Asserting
+        # on the redirect rather than a flash message in the rendered list page
+        # keeps this stable across CKAN versions / session backends.
         resp = app.post(
             tk.url_for("tour.delete", tour_id="no-such-id"),
             headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
         )
 
-        assert resp.status_code == Status.success
-        assert "Tour not found" in resp.body
+        assert resp.status_code == Status.redirect
+        assert tk.url_for("tour.list") in resp.headers["location"]

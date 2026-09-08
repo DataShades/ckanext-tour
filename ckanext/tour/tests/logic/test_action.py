@@ -388,6 +388,23 @@ class TestTourStepUpdate:
         shown = call_action("tour_show", id=tour["id"])
         assert shown["steps"][0]["title"] == "new"
 
+    def test_partial_update_keeps_omitted_optional_fields(
+        self, tour_factory, tour_step_factory
+    ):
+        """`title` / `intro` are `ignore_missing`; omitting them must keep the
+        stored value, not raise a KeyError."""
+        tour = tour_factory(steps=[])
+        step = tour_step_factory(
+            tour_id=tour["id"], title="keep-title", intro="keep-intro"
+        )
+
+        call_action("tour_step_update", id=step["id"], element=".changed")
+
+        shown = call_action("tour_show", id=tour["id"])["steps"][0]
+        assert shown["element"] == ".changed"
+        assert shown["title"] == "keep-title"
+        assert shown["intro"] == "keep-intro"
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourList:

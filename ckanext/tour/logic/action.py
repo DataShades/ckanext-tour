@@ -249,10 +249,10 @@ def tour_step_update(context: types.Context, data_dict: types.DataDict) -> dict[
     previous_image_id = tour_step.image_id
 
     tour_step.index = data_dict.get("index") or tour_step.index
-    tour_step.title = data_dict["title"]
-    tour_step.element = data_dict["element"]
-    tour_step.intro = data_dict["intro"]
-    tour_step.position = data_dict["position"]
+    tour_step.title = data_dict.get("title", tour_step.title)
+    tour_step.element = data_dict.get("element", tour_step.element)
+    tour_step.intro = data_dict.get("intro", tour_step.intro)
+    tour_step.position = data_dict.get("position", tour_step.position)
     tour_step.image_id = image_id or data_dict.get("image_id", tour_step.image_id)
 
     model.Session.commit()
