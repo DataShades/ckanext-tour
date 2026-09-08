@@ -150,6 +150,16 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
 
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
 
+    # the submitted list is authoritative: any step of this tour that is no
+    # longer present was removed in the form, so drop it (and its image). The
+    # form also deletes steps eagerly over htmx; this is the no-JS / failed
+    # request safety net.
+    submitted_ids = {step["id"] for step in steps if step.get("id")}
+
+    for step_id in [existing.id for existing in tour.steps]:
+        if step_id not in submitted_ids:
+            tk.get_action("tour_step_remove")({"ignore_auth": True}, {"id": step_id})
+
     for step in steps:
         action = "tour_step_update" if step.get("id") else "tour_step_create"
         step["tour_id"] = tour.id

@@ -228,6 +228,73 @@ class TestTourUpdate:
         assert result["steps"][0]["title"] == "new"
         assert result["steps"][0]["position"] == "top"
 
+    def test_step_missing_from_payload_is_deleted(
+        self, tour_factory, tour_step_factory
+    ):
+        tour = tour_factory(steps=[])
+        keep = tour_step_factory(tour_id=tour["id"], title="keep")
+        drop = tour_step_factory(tour_id=tour["id"], title="drop")
+
+        result = call_action(
+            "tour_update",
+            id=tour["id"],
+            title="t",
+            steps=[
+                {
+                    "id": keep["id"],
+                    "title": "keep",
+                    "element": ".x",
+                    "intro": "i",
+                    "position": "bottom",
+                },
+            ],
+        )
+
+        assert [s["id"] for s in result["steps"]] == [keep["id"]]
+        assert tour_model.TourStep.get(drop["id"]) is None
+
+    def test_empty_steps_payload_clears_all_steps(
+        self, tour_factory, tour_step_factory
+    ):
+        tour = tour_factory(steps=[])
+        tour_step_factory(tour_id=tour["id"])
+        tour_step_factory(tour_id=tour["id"])
+
+        result = call_action("tour_update", id=tour["id"], title="t", steps=[])
+
+        assert result["steps"] == []
+        assert tour_model.TourStep.get_by_tour(tour["id"]) == []
+
+    def test_deleted_step_image_is_cleaned_up(self, sysadmin):
+        tour = call_action(
+            "tour_create",
+            context={"user": sysadmin["name"]},
+            title="t",
+            author_id=sysadmin["id"],
+            steps=[],
+        )
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            image_upload=FakeFileStorage(),
+        )
+        file_id = step["image_id"]
+
+        call_action(
+            "tour_update",
+            context={"user": sysadmin["name"]},
+            id=tour["id"],
+            title="t",
+            steps=[],
+        )
+
+        with pytest.raises(tk.ObjectNotFound):
+            call_action("files_file_show", id=file_id)
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourRemove:

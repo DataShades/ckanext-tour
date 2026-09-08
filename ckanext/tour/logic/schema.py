@@ -112,14 +112,11 @@ def tour_step_update(
     ignore_empty,
     unicode_safe,
     tour_tour_step_exist,
-    default,
-    boolean_validator,
     int_validator,
 ) -> Schema:
     step_schema = tour_step_schema()
     step_schema.pop("tour_id")
     step_schema["id"] = [ignore_empty, unicode_safe, tour_tour_step_exist]
-    step_schema["clear"] = [default("false"), boolean_validator]
     step_schema["index"] = [ignore_empty, int_validator]
 
     return step_schema
