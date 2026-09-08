@@ -221,6 +221,76 @@ class TestTourList:
 
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
+class TestTourVisibility:
+    """`tour_list` / `tour_show` are public but hide non-active tours and
+    manager-only fields from non-managers."""
+
+    anon = {"ignore_auth": False, "user": ""}
+
+    def _manager(self, sysadmin):
+        return {"ignore_auth": False, "user": sysadmin["name"]}
+
+    def test_list_hides_inactive_from_anon(self, tour_factory):
+        tour_factory(steps=[], state=tour_model.Tour.State.active)
+        tour_factory(steps=[], state=tour_model.Tour.State.inactive)
+
+        result = call_action("tour_list", context=dict(self.anon))
+
+        assert [t["state"] for t in result] == [tour_model.Tour.State.active]
+
+    def test_list_state_param_ignored_for_anon(self, tour_factory):
+        tour_factory(steps=[], state=tour_model.Tour.State.inactive)
+
+        result = call_action(
+            "tour_list",
+            context=dict(self.anon),
+            state=tour_model.Tour.State.inactive,
+        )
+
+        assert result == []
+
+    def test_list_shows_everything_to_manager(self, tour_factory, sysadmin):
+        tour_factory(steps=[], state=tour_model.Tour.State.active)
+        tour_factory(steps=[], state=tour_model.Tour.State.inactive)
+
+        result = call_action("tour_list", context=self._manager(sysadmin))
+
+        assert len(result) == 2  # noqa: PLR2004
+        assert all("author_id" in t for t in result)
+
+    def test_list_strips_author_id_for_anon(self, tour_factory):
+        tour_factory(steps=[])
+
+        result = call_action("tour_list", context=dict(self.anon))
+
+        assert "author_id" not in result[0]
+
+    def test_show_active_tour_to_anon_without_author(self, tour_factory):
+        tour = tour_factory(steps=[])
+
+        result = call_action("tour_show", context=dict(self.anon), id=tour["id"])
+
+        assert result["id"] == tour["id"]
+        assert "author_id" not in result
+
+    def test_show_inactive_tour_hidden_from_anon(self, tour_factory):
+        tour = tour_factory(steps=[], state=tour_model.Tour.State.inactive)
+
+        with pytest.raises(tk.ObjectNotFound):
+            call_action("tour_show", context=dict(self.anon), id=tour["id"])
+
+    def test_show_inactive_tour_visible_to_manager(self, tour_factory, sysadmin):
+        tour = tour_factory(steps=[], state=tour_model.Tour.State.inactive)
+
+        result = call_action(
+            "tour_show", context=self._manager(sysadmin), id=tour["id"]
+        )
+
+        assert result["id"] == tour["id"]
+        assert result["author_id"]
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourStepImage:
     """A step can carry one image, from an uploaded file or a URL."""
 

@@ -14,13 +14,36 @@ from ckanext.files.shared import make_upload
 from ckanext.tour.logic import schema
 from ckanext.tour.model import Tour, TourStep
 
+_MANAGER_ONLY_FIELDS = ("author_id",)
+
+
+def _user_manages_tours(context: types.Context) -> bool:
+    try:
+        tk.check_access("tour_manage", context)
+    except tk.NotAuthorized:
+        return False
+
+    return True
+
 
 @tk.side_effect_free
 @validate(schema.tour_show)
 def tour_show(context: types.Context, data_dict: types.DataDict) -> dict[str, Any]:
     tk.check_access("tour_show", context, data_dict)
 
-    return cast(Tour, Tour.get(data_dict["id"])).dictize(context)
+    tour = cast(Tour, Tour.get(data_dict["id"]))
+    is_manager = _user_manages_tours(context)
+
+    if not is_manager and tour.state != Tour.State.active:
+        raise tk.ObjectNotFound(tk._("Tour not found"))
+
+    result = tour.dictize(context)
+
+    if not is_manager:
+        for field in _MANAGER_ONLY_FIELDS:
+            result.pop(field, None)
+
+    return result
 
 
 @tk.side_effect_free
@@ -28,23 +51,36 @@ def tour_show(context: types.Context, data_dict: types.DataDict) -> dict[str, An
 def tour_list(context: types.Context, data_dict: types.DataDict) -> list[dict[str, Any]]:
     """Return a list of tours from the database.
 
-    :param state: optionally keep only ``active`` or ``inactive`` tours
+    Non-managers only ever see ``active`` tours and never the ``author_id``.
+
+    :param state: (managers only) keep only ``active`` or ``inactive`` tours
     :param fl: optional field list (a list, or a comma/space separated string)
         restricting the keys returned per tour, like ``fl`` in
         ``package_search``. Omitting ``steps`` also skips loading them.
     """
     tk.check_access("tour_list", context, data_dict)
 
+    is_manager = _user_manages_tours(context)
+
     stmt = select(Tour)
 
-    if data_dict.get("state"):
+    if not is_manager:
+        stmt = stmt.where(Tour.state == Tour.State.active)
+    elif data_dict.get("state"):
         stmt = stmt.where(Tour.state == data_dict["state"])
 
     stmt = stmt.order_by(Tour.created_at.desc())
 
     fields = data_dict.get("fl")
 
-    return [tour.dictize(context, fields) for tour in model.Session.scalars(stmt)]
+    result = [tour.dictize(context, fields) for tour in model.Session.scalars(stmt)]
+
+    if not is_manager:
+        for row in result:
+            for field in _MANAGER_ONLY_FIELDS:
+                row.pop(field, None)
+
+    return result
 
 
 @validate(schema.tour_create)
