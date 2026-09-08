@@ -14,7 +14,6 @@ fake = Faker()
 
 register(tour_factories.TourFactory, "tour")
 register(tour_factories.TourStepFactory, "tour_step")
-register(tour_factories.TourStepImageFactory)
 
 
 def _migrate_plugins(migrate_db_for):

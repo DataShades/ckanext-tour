@@ -33,6 +33,20 @@ class Tour(tk.BaseModel):
 
     user = relationship(model.User)
 
+    # Loaded once per instance (batched across a result set thanks to
+    # ``lazy="selectin"``) and ordered in SQL, instead of re-querying and
+    # re-sorting in Python on every ``tour.steps`` access.
+    steps = relationship(
+        "TourStep",
+        order_by="TourStep.index",
+        primaryjoin="Tour.id == TourStep.tour_id",
+        foreign_keys="TourStep.tour_id",
+        back_populates="tour",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
+
     def __repr__(self):
         return f"Tour(title={self.title})"
 
@@ -61,13 +75,6 @@ class Tour(tk.BaseModel):
             "page": self.page or "",
             "steps": [step.dictize(context) for step in self.steps],
         }
-
-    @property
-    def steps(self) -> list[TourStep]:
-        return sorted(
-            TourStep.get_by_tour(self.id),
-            key=lambda step: step.index,
-        )
 
     @classmethod
     def get(cls, tour_id: str) -> Self | None:
@@ -106,6 +113,8 @@ class TourStep(tk.BaseModel):
     position = Column(Text, default=Position.bottom)
     tour_id = Column(Text, ForeignKey("tour.id", ondelete="CASCADE"))
     image_id = Column(Text, nullable=True)
+
+    tour = relationship("Tour", back_populates="steps")
 
     @classmethod
     def create(cls, data_dict: dict[str, Any]) -> Self:
