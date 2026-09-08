@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import contextlib
 from typing import Any, cast
 
 from sqlalchemy import select
@@ -13,7 +13,16 @@ from ckan.model.types import make_uuid
 from ckanext.files.shared import make_upload
 
 from ckanext.tour.logic import schema
-from ckanext.tour.model import Tour, TourStep
+from ckanext.tour.model import Tour, TourStep, utcnow
+
+
+def _delete_files(*file_ids: str | None) -> None:
+    """Best-effort removal of ``files`` records left behind by a step image."""
+    for file_id in file_ids:
+        if not file_id:
+            continue
+        with contextlib.suppress(tk.ObjectNotFound, tk.ValidationError):
+            tk.get_action("files_file_delete")({"ignore_auth": True}, {"id": file_id})
 
 _MANAGER_ONLY_FIELDS = ("author_id",)
 
@@ -117,13 +126,12 @@ def tour_remove(context: types.Context, data_dict: types.DataDict) -> bool:
     tk.check_access("tour_manage", context, data_dict)
 
     tour = cast(Tour, Tour.get(data_dict["id"]))
+    image_ids = [step.image_id for step in tour.steps]
 
-    for step in tour.steps:
-        step.delete()
-
-    tour.delete()
-
+    model.Session.delete(tour)
     model.Session.commit()
+
+    _delete_files(*image_ids)
 
     return True
 
@@ -138,7 +146,7 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
     tour.anchor = data_dict.get("anchor", tour.anchor)
     tour.page = data_dict.get("page", tour.page)
     tour.state = data_dict.get("state", tour.state)
-    tour.modified_at = datetime.utcnow()
+    tour.modified_at = utcnow()
 
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
 
@@ -206,6 +214,7 @@ def tour_step_update(context: types.Context, data_dict: types.DataDict) -> dict[
     image_id = _upload_step_image(data_dict)
 
     tour_step = cast(TourStep, TourStep.get(data_dict["id"]))
+    previous_image_id = tour_step.image_id
 
     tour_step.index = data_dict.get("index") or tour_step.index
     tour_step.title = data_dict["title"]
@@ -216,6 +225,9 @@ def tour_step_update(context: types.Context, data_dict: types.DataDict) -> dict[
 
     model.Session.commit()
 
+    if previous_image_id and previous_image_id != tour_step.image_id:
+        _delete_files(previous_image_id)
+
     return tour_step.dictize(context)
 
 
@@ -224,9 +236,12 @@ def tour_step_remove(context: types.Context, data_dict: types.DataDict) -> bool:
     tk.check_access("tour_manage", context, data_dict)
 
     tour_step = cast(TourStep, TourStep.get(data_dict["id"]))
+    image_id = tour_step.image_id
 
     tour_step.delete()
     model.Session.commit()
+
+    _delete_files(image_id)
 
     return True
 

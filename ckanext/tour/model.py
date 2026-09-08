@@ -1,13 +1,21 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
-from typing import Any, cast
+from datetime import UTC, datetime
+from typing import Any, Self, cast
 
-from sqlalchemy import CursorResult, ForeignKey, Text, event, func, select, update
-from sqlalchemy.orm import Mapped, Mapper, mapped_column, relationship
+from sqlalchemy import (
+    CursorResult,
+    DateTime,
+    ForeignKey,
+    Text,
+    event,
+    func,
+    select,
+    update,
+)
 from sqlalchemy.engine import Connection
-from typing import Self
+from sqlalchemy.orm import Mapped, Mapper, mapped_column, relationship
 
 from ckan import model, types
 from ckan.model import User
@@ -15,6 +23,10 @@ from ckan.model.types import make_uuid
 from ckan.plugins import toolkit as tk
 
 log = logging.getLogger(__name__)
+
+
+def utcnow() -> datetime:
+    return datetime.now(UTC)
 
 
 class Tour(tk.BaseModel):
@@ -31,10 +43,10 @@ class Tour(tk.BaseModel):
     author_id: Mapped[str] = mapped_column(
         Text,
         ForeignKey(User.id, ondelete="CASCADE"),
-        primary_key=True,
+        index=True,
     )
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    modified_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    modified_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     anchor: Mapped[str] = mapped_column(Text)
     page: Mapped[str | None] = mapped_column(Text)
 
@@ -136,7 +148,7 @@ class Tour(tk.BaseModel):
         if not ids:
             return 0
 
-        stmt = update(cls).where(cls.id.in_(ids)).values(state=state, modified_at=datetime.utcnow())
+        stmt = update(cls).where(cls.id.in_(ids)).values(state=state, modified_at=utcnow())
         result = cast("CursorResult[Any]", model.Session.execute(stmt))
         model.Session.commit()
 
@@ -159,14 +171,14 @@ class TourStep(tk.BaseModel):
     element: Mapped[str | None] = mapped_column(Text)
     intro: Mapped[str | None] = mapped_column(Text)
     position: Mapped[str | None] = mapped_column(Text, default=Position.bottom)
-    tour_id: Mapped[str | None] = mapped_column(
+    tour_id: Mapped[str] = mapped_column(
         Text,
         ForeignKey("tour.id", ondelete="CASCADE"),
         index=True,
     )
     image_id: Mapped[str | None] = mapped_column(Text)
 
-    tour: Mapped[Tour | None] = relationship(back_populates="steps")
+    tour: Mapped[Tour] = relationship(back_populates="steps")
 
     @classmethod
     def create(cls, data_dict: dict[str, Any]) -> Self:
@@ -250,5 +262,5 @@ def _bump_tour_modified_at(
     connection.execute(
         update(Tour)
         .where(Tour.id == target.tour_id)
-        .values(modified_at=datetime.utcnow()),
+        .values(modified_at=utcnow()),
     )

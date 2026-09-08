@@ -1,4 +1,4 @@
-"""Create Tour, TourStep, TourStepImage tables
+"""Create tour and tour_step tables
 
 Revision ID: c9e5d4235e58
 Revises:

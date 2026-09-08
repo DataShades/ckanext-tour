@@ -39,6 +39,16 @@ class TestTourModel:
         assert set(tour.dictize({}, ["id", "state"])) == {"id", "state"}
         assert "steps" not in tour.dictize({}, ["id"])
 
+    def test_timestamps_are_timezone_aware(self, tour_factory):
+        tour = Tour.get(tour_factory(steps=[])["id"])
+
+        assert tour.created_at.tzinfo is not None
+        assert tour.modified_at.tzinfo is not None
+
+    def test_single_column_primary_keys(self):
+        assert [c.name for c in Tour.__table__.primary_key] == ["id"]
+        assert [c.name for c in TourStep.__table__.primary_key] == ["id"]
+
     def test_delete_cascades_to_steps(self, tour_factory, tour_step_factory):
         tour = tour_factory(steps=[])
         tour_step_factory(tour_id=tour["id"])

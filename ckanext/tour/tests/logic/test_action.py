@@ -541,3 +541,67 @@ class TestTourStepImage:
 
         assert updated["image_id"]
         assert updated["image_id"] != original
+
+    def test_replacing_image_deletes_the_old_file(self, sysadmin):
+        tour = self._tour(sysadmin)
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            image_upload=FakeFileStorage(),
+        )
+        old_file_id = step["image_id"]
+
+        call_action(
+            "tour_step_update",
+            context={"user": sysadmin["name"]},
+            id=step["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            position="bottom",
+            image_upload=FakeFileStorage(),
+        )
+
+        with pytest.raises(tk.ObjectNotFound):
+            call_action("files_file_show", id=old_file_id)
+
+    def test_removing_a_step_deletes_its_file(self, sysadmin):
+        tour = self._tour(sysadmin)
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            image_upload=FakeFileStorage(),
+        )
+        file_id = step["image_id"]
+
+        call_action("tour_step_remove", id=step["id"])
+
+        with pytest.raises(tk.ObjectNotFound):
+            call_action("files_file_show", id=file_id)
+
+    def test_removing_a_tour_deletes_its_step_files(self, sysadmin):
+        tour = self._tour(sysadmin)
+        step = call_action(
+            "tour_step_create",
+            context={"user": sysadmin["name"]},
+            tour_id=tour["id"],
+            title="s",
+            element=".x",
+            intro="i",
+            image_upload=FakeFileStorage(),
+        )
+        file_id = step["image_id"]
+
+        call_action("tour_remove", id=tour["id"])
+
+        assert not tour_model.TourStep.get_by_tour(tour["id"])
+        with pytest.raises(tk.ObjectNotFound):
+            call_action("files_file_show", id=file_id)
