@@ -115,24 +115,17 @@ class TourTable(t.TableDefinition):
         return t.ActionHandlerResult(success=True)
 
     def disable_tours(self, rows: list[t.Row]) -> t.ActionHandlerResult:
-        for row in rows:
-            tk.get_action("tour_update")(
-                {"ignore_auth": True},
-                {"id": row["id"], "state": Tour.State.inactive},
-            )
-        return t.ActionHandlerResult(success=True, message="Tour(s) disabled.")
+        Tour.set_state([row["id"] for row in rows], Tour.State.inactive)
+
+        return t.ActionHandlerResult(success=True, message=tk._("Tour(s) disabled."))
 
     def enable_tours(self, rows: list[t.Row]) -> t.ActionHandlerResult:
-        for row in rows:
-            tk.get_action("tour_update")(
-                {"ignore_auth": True},
-                {"id": row["id"], "state": Tour.State.active},
-            )
+        Tour.set_state([row["id"] for row in rows], Tour.State.active)
 
-        return t.ActionHandlerResult(success=True, message="Tour(s) enabled.")
+        return t.ActionHandlerResult(success=True, message=tk._("Tour(s) enabled."))
 
     def remove_tours(self, rows: list[t.Row]) -> t.ActionHandlerResult:
         for row in rows:
             tk.get_action("tour_remove")({"ignore_auth": True}, {"id": row["id"]})
 
-        return t.ActionHandlerResult(success=True, message="Tour(s) removed.")
+        return t.ActionHandlerResult(success=True, message=tk._("Tour(s) removed."))

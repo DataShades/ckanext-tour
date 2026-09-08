@@ -94,6 +94,29 @@ class Tour(tk.BaseModel):
 
         return query.all()
 
+    @classmethod
+    def set_state(cls, ids: list[str], state: str) -> int:
+        """Bulk-update the state of the given tours in a single statement.
+
+        Returns the number of affected rows. Used by the admin table's bulk
+        enable/disable actions instead of running ``tour_update`` (with its full
+        dictize) once per row.
+        """
+        if not ids:
+            return 0
+
+        count = (
+            model.Session.query(cls)
+            .filter(cls.id.in_(ids))
+            .update(
+                {cls.state: state, cls.modified_at: datetime.utcnow()},
+                synchronize_session=False,
+            )
+        )
+        model.Session.commit()
+
+        return count
+
 
 class TourStep(tk.BaseModel):
     __tablename__ = "tour_step"
