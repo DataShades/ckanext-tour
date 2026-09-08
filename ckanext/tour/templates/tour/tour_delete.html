@@ -8,6 +8,8 @@
 
 {% block page_content %}
     <form action="{{ h.url_for('tour.delete', tour_id=tour_id) }}" method="post">
+        {{ h.csrf_input() }}
+
         <p>{{ _("This action cannot be undone.") }}</p>
 
         {{ form.hidden("tour_id", value=tour_id) }}
