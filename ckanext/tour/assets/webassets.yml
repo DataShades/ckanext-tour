@@ -8,7 +8,6 @@ tour-js:
     - js/vendor/floating-ui.core.umd.js
 
     - js/tour-init.js
-    - js/tour-steps.js
 
 tour-css:
   filter: cssrewrite
@@ -17,10 +16,12 @@ tour-css:
     - css/vendor/shepherd.min.css
     - css/styles.css
 
-tour-draggable:
+tour-form-js:
   filter: rjsmin
-  output: ckanext-tour/%(version)s-tour-draggable.js
+  output: ckanext-tour/%(version)s-tour-form.js
   contents:
     - js/vendor/draggable/plugins.min.js
     - js/vendor/draggable/sort-animation.min.js
     - js/vendor/draggable/sortable.min.js
+
+    - js/tour-steps.js
