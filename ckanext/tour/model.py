@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import logging
 from datetime import datetime
-from typing import Any, Self
+from typing import Any, Self, cast
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, Text
-from sqlalchemy.orm import Query, relationship
+from sqlalchemy import CursorResult, ForeignKey, Text, select, update
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from ckan import model, types
+from ckan.model import User
 from ckan.model.types import make_uuid
 from ckan.plugins import toolkit as tk
 
@@ -21,23 +22,23 @@ class Tour(tk.BaseModel):
         active = "active"
         inactive = "inactive"
 
-    id = Column(Text, primary_key=True, default=make_uuid)
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=make_uuid)
 
-    title = Column(Text, nullable=False)
-    state = Column(Text, nullable=False, default=State.active)
-    author_id = Column(ForeignKey(model.User.id, ondelete="CASCADE"), primary_key=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    modified_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    anchor = Column(Text, nullable=False)
-    page = Column(Text, nullable=True)
+    title: Mapped[str] = mapped_column(Text)
+    state: Mapped[str] = mapped_column(Text, default=State.active)
+    author_id: Mapped[str] = mapped_column(
+        Text,
+        ForeignKey(User.id, ondelete="CASCADE"),
+        primary_key=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    modified_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    anchor: Mapped[str] = mapped_column(Text)
+    page: Mapped[str | None] = mapped_column(Text)
 
-    user = relationship(model.User)
+    user: Mapped[User] = relationship(User)
 
-    # Loaded once per instance (batched across a result set thanks to
-    # ``lazy="selectin"``) and ordered in SQL, instead of re-querying and
-    # re-sorting in Python on every ``tour.steps`` access.
-    steps = relationship(
-        "TourStep",
+    steps: Mapped[list[TourStep]] = relationship(
         order_by="TourStep.index",
         primaryjoin="Tour.id == TourStep.tour_id",
         foreign_keys="TourStep.tour_id",
@@ -47,7 +48,7 @@ class Tour(tk.BaseModel):
         lazy="selectin",
     )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"Tour(title={self.title})"
 
     @classmethod
@@ -78,21 +79,21 @@ class Tour(tk.BaseModel):
 
     @classmethod
     def get(cls, tour_id: str) -> Self | None:
-        query: Query = model.Session.query(cls).filter(cls.id == tour_id)
+        stmt = select(cls).where(cls.id == tour_id)
 
-        return query.one_or_none()
+        return model.Session.scalars(stmt).one_or_none()
 
     @classmethod
     def get_by_anchor(cls, tour_anchor: str) -> Self | None:
-        query: Query = model.Session.query(cls).filter(cls.anchor == tour_anchor)
+        stmt = select(cls).where(cls.anchor == tour_anchor)
 
-        return query.one_or_none()
+        return model.Session.scalars(stmt).one_or_none()
 
     @classmethod
-    def all(cls) -> list[Tour]:
-        query: Query = model.Session.query(cls).order_by(cls.created_at.desc())
+    def all(cls) -> list[Self]:
+        stmt = select(cls).order_by(cls.created_at.desc())
 
-        return query.all()
+        return list(model.Session.scalars(stmt).all())
 
     @classmethod
     def set_state(cls, ids: list[str], state: str) -> int:
@@ -105,17 +106,15 @@ class Tour(tk.BaseModel):
         if not ids:
             return 0
 
-        count = (
-            model.Session.query(cls)
-            .filter(cls.id.in_(ids))
-            .update(
-                {cls.state: state, cls.modified_at: datetime.utcnow()},
-                synchronize_session=False,
-            )
+        stmt = (
+            update(cls)
+            .where(cls.id.in_(ids))
+            .values(state=state, modified_at=datetime.utcnow())
         )
+        result = cast("CursorResult[Any]", model.Session.execute(stmt))
         model.Session.commit()
 
-        return count
+        return result.rowcount
 
 
 class TourStep(tk.BaseModel):
@@ -127,17 +126,21 @@ class TourStep(tk.BaseModel):
         right = "right"
         left = "left"
 
-    id = Column(Text, primary_key=True, default=make_uuid)
+    id: Mapped[str] = mapped_column(Text, primary_key=True, default=make_uuid)
 
-    index = Column(Integer)
-    title = Column(Text, nullable=True)
-    element = Column(Text)
-    intro = Column(Text, nullable=True)
-    position = Column(Text, default=Position.bottom)
-    tour_id = Column(Text, ForeignKey("tour.id", ondelete="CASCADE"), index=True)
-    image_id = Column(Text, nullable=True)
+    index: Mapped[int | None] = mapped_column()
+    title: Mapped[str | None] = mapped_column(Text)
+    element: Mapped[str | None] = mapped_column(Text)
+    intro: Mapped[str | None] = mapped_column(Text)
+    position: Mapped[str | None] = mapped_column(Text, default=Position.bottom)
+    tour_id: Mapped[str | None] = mapped_column(
+        Text,
+        ForeignKey("tour.id", ondelete="CASCADE"),
+        index=True,
+    )
+    image_id: Mapped[str | None] = mapped_column(Text)
 
-    tour = relationship("Tour", back_populates="steps")
+    tour: Mapped[Tour | None] = relationship(back_populates="steps")
 
     @classmethod
     def create(cls, data_dict: dict[str, Any]) -> Self:
@@ -154,15 +157,15 @@ class TourStep(tk.BaseModel):
 
     @classmethod
     def get(cls, tour_step_id: str) -> Self | None:
-        query: Query = model.Session.query(cls).filter(cls.id == tour_step_id)
+        stmt = select(cls).where(cls.id == tour_step_id)
 
-        return query.one_or_none()
+        return model.Session.scalars(stmt).one_or_none()
 
     @classmethod
     def get_by_tour(cls, tour_id: str) -> list[Self]:
-        query: Query = model.Session.query(cls).filter(cls.tour_id == tour_id)
+        stmt = select(cls).where(cls.tour_id == tour_id)
 
-        return query.all()
+        return list(model.Session.scalars(stmt).all())
 
     @property
     def image(self) -> str:
@@ -173,7 +176,7 @@ class TourStep(tk.BaseModel):
 
         return file_info["href"]
 
-    def dictize(self, context):
+    def dictize(self, context: types.Context) -> dict[str, Any]:
         return {
             "id": self.id,
             "index": self.index,
