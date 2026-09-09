@@ -38,7 +38,7 @@ EVERYWHERE_SUPPRESSED = frozenset(
     },
 )
 
-WIDGET_FIELDS = ["id", "title", "auto_start", "steps"]
+WIDGET_FIELDS = ["id", "title", "auto_start", "steps", "modified_at"]
 
 
 def tour_is_admin_panel_enabled() -> bool:

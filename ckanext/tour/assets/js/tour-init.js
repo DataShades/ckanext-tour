@@ -42,8 +42,15 @@ this.ckan.module('tour-init', function (jQuery) {
             return window.matchMedia("(max-width: 768px), (pointer: coarse)").matches;
         },
 
-        _seenKey: function (tourId) {
-            return "tour-seen-" + tourId;
+        _seenKeyBase: function (tour) {
+            return "tour-seen-" + tour.id;
+        },
+
+        _seenKey: function (tour) {
+            // Version the flag by `modified_at` so editing a tour (or any of
+            // its steps — the model bumps `modified_at` for both) re-shows it to
+            // people who already dismissed the previous version.
+            return this._seenKeyBase(tour) + "-" + (tour.modified_at || "0");
         },
 
         _renderLauncher: function () {
@@ -159,34 +166,54 @@ this.ckan.module('tour-init', function (jQuery) {
                     continue;
                 }
 
-                if (this._getSeen(tour.id)) {
+                if (this._getSeen(tour)) {
                     continue;
                 }
 
-                this._setSeen(tour.id);
+                this._setSeen(tour);
                 this._startTour(tour);
                 return;
             }
         },
 
-        _getSeen: function (tourId) {
+        _getSeen: function (tour) {
             try {
-                return window.localStorage.getItem(this._seenKey(tourId));
+                return window.localStorage.getItem(this._seenKey(tour));
             } catch (e) {
                 return null;
             }
         },
 
-        _setSeen: function (tourId) {
+        _setSeen: function (tour) {
             try {
-                window.localStorage.setItem(this._seenKey(tourId), "1");
+                this._pruneSeen(tour);
+                window.localStorage.setItem(this._seenKey(tour), "1");
             } catch (e) {
                 // private mode / storage disabled — auto-start will just repeat
             }
         },
 
+        _pruneSeen: function (tour) {
+            // Drop "seen" flags for older versions of this tour (and the legacy
+            // unversioned key) so entries don't accumulate over its lifetime.
+            var base = this._seenKeyBase(tour);
+            var current = this._seenKey(tour);
+
+            for (var i = window.localStorage.length - 1; i >= 0; i--) {
+                var key = window.localStorage.key(i);
+
+                if (!key || key === current) {
+                    continue;
+                }
+
+                if (key === base || key.indexOf(base + "-") === 0) {
+                    window.localStorage.removeItem(key);
+                }
+            }
+        },
+
         _startTour: function (tour) {
-            this._setSeen(tour.id);
+            this._setSeen(tour);
             this._getInstance(tour).start();
         },
 
