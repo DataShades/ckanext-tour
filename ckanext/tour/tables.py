@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import select, func
 
 import ckan.plugins.toolkit as tk
@@ -39,13 +41,32 @@ class TourTable(t.TableDefinition):
             ),
             columns=[
                 t.ColumnDefinition(field="title"),
-                t.ColumnDefinition(field="state"),
-                t.ColumnDefinition(field="endpoint", title=tk._("Shown on")),
+                t.ColumnDefinition(field="state", width=100, resizable=False),
+                t.ColumnDefinition(field="endpoint", title=tk._("Shown on"), width=160, resizable=False),
+                t.ColumnDefinition(
+                    field="author_id",
+                    title=tk._("Author"),
+                    formatters=[(t.formatters.UserLinkFormatter, {})],
+                    width=170,
+                    resizable=False,
+                    sortable=False,
+                    filterable=False,
+                    tabulator_formatter="html"
+                ),
                 t.ColumnDefinition(
                     field="created_at",
+                    width=170,
+                    resizable=False,
                     formatters=[(t.formatters.DateFormatter, {"date_format": "%d %B %Y"})],
                 ),
-                t.ColumnDefinition(field="steps", title=tk._("Steps")),
+                t.ColumnDefinition(
+                    field="modified_at",
+                    title=tk._("Last modified"),
+                    width=170,
+                    resizable=False,
+                    formatters=[(t.formatters.DateFormatter, {"date_format": "%d %B %Y"})],
+                ),
+                t.ColumnDefinition(field="steps", title=tk._("Steps"), width=100, resizable=False),
             ],
             row_actions=[
                 t.RowActionDefinition(
@@ -91,6 +112,18 @@ class TourTable(t.TableDefinition):
                 ),
             ],
         )
+
+    def get_tabulator_config(self) -> dict[str, Any]:
+        config = super().get_tabulator_config()
+
+        for column in config["columns"]:
+            if column["field"] not in ("state", "created_at", "modified_at", "steps"):
+                continue
+
+            column.pop("headerFilter", None)
+            column.pop("headerFilterPlaceholder", None)
+
+        return config
 
     def table_action_add_tour(self) -> t.ActionHandlerResult:
         return t.ActionHandlerResult(
