@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from flask import Response
 from flask.views import MethodView
 
@@ -9,7 +11,21 @@ from ckanext.tour import config
 
 
 class TourConfigView(MethodView):
-    """Standalone settings page."""
+    """Standalone settings page.
+
+    Saving tour settings writes CKAN runtime config via ``config_option_update``,
+    which is sysadmin-only — a stricter bar than the blueprint's ``tour_manage``
+    guard. Enforce it here so a site that delegates ``tour_manage`` to a
+    non-sysadmin gets a clean 403 instead of a 500 from the action on save.
+    """
+
+    def dispatch_request(self, **kwargs: Any) -> Response | str:
+        try:
+            tk.check_access("config_option_update", {"user": tk.current_user.name})
+        except tk.NotAuthorized:
+            tk.abort(403, tk._("You need to be a system administrator to manage tour settings"))
+
+        return super().dispatch_request(**kwargs)
 
     def get(self) -> str:
         return tk.render(

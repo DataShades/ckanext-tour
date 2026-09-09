@@ -2,10 +2,23 @@ import pytest
 
 from enum import IntEnum
 
+from ckan import authz
 import ckan.plugins.toolkit as tk
 
 from ckanext.tour import config
 from ckanext.tour.model import Tour
+
+
+@pytest.fixture
+def delegated_tour_manager(monkeypatch):
+    """Simulate a site that overrides ``tour_manage`` to grant a non-sysadmin
+    access to the tour admin (which ``auth.py`` explicitly invites)."""
+    authz.auth_functions_list()  # force the lazy cache to build first
+    monkeypatch.setitem(
+        authz._AuthFunctions._functions,
+        "tour_manage",
+        lambda context, data_dict: {"success": True},
+    )
 
 
 class Status(IntEnum):
@@ -26,6 +39,37 @@ class TestTourConfigView:
         resp = app.get(tk.url_for("tour.config"), headers={"Authorization": user["token"]}, status=Status.forbidden)
 
         assert resp.status_code == Status.forbidden
+
+    def test_settings_page_forbidden_for_delegated_manager(
+        self, app, user, delegated_tour_manager
+    ):
+        # passes the blueprint's tour_manage guard, but settings are sysadmin-only
+        resp = app.get(
+            tk.url_for("tour.config"),
+            headers={"Authorization": user["token"]},
+            status=Status.forbidden,
+        )
+
+        assert resp.status_code == Status.forbidden
+
+    def test_settings_update_forbidden_not_500_for_delegated_manager(
+        self, app, user, delegated_tour_manager
+    ):
+        before = config.get_launcher_position()
+        target = "bottom-left" if before != "bottom-left" else "bottom-right"
+
+        resp = app.post(
+            tk.url_for("tour.config"),
+            data={
+                config.CONF_LAUNCHER_POSITION: target,
+                config.CONF_COLLAPSE_STEPS: "false",
+            },
+            headers={"Authorization": user["token"]},
+            status=Status.forbidden,
+        )
+
+        assert resp.status_code == Status.forbidden
+        assert config.get_launcher_position() == before
 
     def test_settings_update_persists_options(self, app, sysadmin):
         app.post(
@@ -132,9 +176,7 @@ class TestTourFormViews:
         assert Tour.get(tour["id"]) is None
 
     def test_delete_post_missing_tour_does_not_500(self, app, sysadmin):
-        # a missing tour must redirect back to the list, not 500 (B1). Asserting
-        # on the redirect rather than a flash message in the rendered list page
-        # keeps this stable across CKAN versions / session backends.
+        # a missing tour must redirect back to the list.
         resp = app.post(
             tk.url_for("tour.delete", tour_id="no-such-id"),
             headers={"Authorization": sysadmin["token"]},
