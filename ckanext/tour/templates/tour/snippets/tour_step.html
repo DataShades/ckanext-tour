@@ -47,9 +47,7 @@
                         {{ form.info(_('Example: .dataset-list or #map')) }}
                     {% endcall %}
 
-                    {% call form.input("step_intro", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) %}
-                        {{ form.info(_('Supports HTML')) }}
-                    {% endcall %}
+                    {{ form.markdown("step_intro", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) }}
 
                     {{ form.select('step_position', label=_('Position'), options=h.tour_get_position_options(), selected=step.step_position or step.position, error=errors.position) }}
 

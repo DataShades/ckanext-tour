@@ -120,6 +120,21 @@ class TestPageTours:
         assert "Globaltour" in app.get(tk.url_for("home.about")).body
         assert "Globaltour" not in app.get(tk.url_for("user.login")).body
 
+    def test_step_intro_is_rendered_from_markdown(self, app, tour_factory):
+        tour_factory(
+            steps=[{"title": "s", "element": ".x", "intro": "**bold intro** <script>x</script>"}],
+            endpoint="home.about",
+            title="Mdtour",
+        )
+
+        body = app.get(tk.url_for("home.about")).body
+
+        # the tours payload is embedded in a data-module-config attribute, so
+        # its rendered HTML is attribute-escaped in the page source
+        assert "&lt;strong&gt;bold intro&lt;/strong&gt;" in body
+        assert "**bold intro**" not in body
+        assert "<script>x</script>" not in body
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestHasTours:

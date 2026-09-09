@@ -127,7 +127,13 @@ def tour_get_page_tours() -> list[dict[str, Any]]:
         # keep only tours explicitly bound to this endpoint, drop "Everywhere"
         tours = [tour for tour in tours if tour.endpoint]
 
-    return [tour.dictize({}, WIDGET_FIELDS) for tour in tours]
+    payload = [tour.dictize({}, WIDGET_FIELDS) for tour in tours]
+
+    for tour in payload:
+        for step in tour.get("steps", []):
+            step["intro"] = tk.h.render_markdown(step.get("intro") or "")
+
+    return payload
 
 
 def tour_has_tours() -> bool:

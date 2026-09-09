@@ -193,6 +193,15 @@
                 height: auto;
                 width: -webkit-fill-available;
             }
+
+            // intro is rendered Markdown, so it comes wrapped in <p>/<ul>/…
+            > :first-child {
+                margin-top: 0;
+            }
+
+            > :last-child {
+                margin-bottom: 0;
+            }
         }
 
         .shepherd-stats {

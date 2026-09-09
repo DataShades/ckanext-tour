@@ -343,6 +343,7 @@ this.ckan.module('tour-init', function (jQuery) {
                 var lastButtonText = isLast ? self._("Done") : nextText;
                 var firstButtonClasses = isFirst ? 'shepherd-back disabled' : 'shepherd-back';
 
+                // `step.intro` is already sanitised HTML, rendered server-side
                 if (step.image_url) {
                     var imageData = $("<img />", { src: step.image_url })[0].outerHTML;
                     step.text = (step.intro || "") + "<br><br>" + imageData;
