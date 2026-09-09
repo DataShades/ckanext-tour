@@ -133,6 +133,11 @@ class Tour(tk.BaseModel):
         return list(model.Session.scalars(stmt).all())
 
     @classmethod
+    def exists(cls) -> bool:
+        """Whether at least one tour row exists (cheap; loads no rows)."""
+        return model.Session.scalars(select(cls.id).limit(1)).first() is not None
+
+    @classmethod
     def active_for_endpoint(cls, endpoint: str | None) -> list[Self]:
         """Active tours shown on ``endpoint`` (plus the ``endpoint``-less ones)."""
         stmt = select(cls).where(cls.state == cls.State.active)

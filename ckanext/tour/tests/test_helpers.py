@@ -119,3 +119,14 @@ class TestPageTours:
 
         assert "Globaltour" in app.get(tk.url_for("home.about")).body
         assert "Globaltour" not in app.get(tk.url_for("user.login")).body
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
+class TestHasTours:
+    def test_false_when_no_tours(self):
+        assert helpers.tour_has_tours() is False
+
+    def test_true_with_any_tour(self, tour_factory):
+        tour_factory(steps=[])
+
+        assert helpers.tour_has_tours() is True

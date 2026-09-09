@@ -130,6 +130,11 @@ def tour_get_page_tours() -> list[dict[str, Any]]:
     return [tour.dictize({}, WIDGET_FIELDS) for tour in tours]
 
 
+def tour_has_tours() -> bool:
+    """Whether any tour exists at all — drives the tours-list empty state."""
+    return Tour.exists()
+
+
 def tour_get_config() -> dict[str, Any]:
     """Runtime settings plus the tours for the current page."""
     return {
