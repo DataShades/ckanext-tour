@@ -233,33 +233,48 @@ this.ckan.module('tour-init', function (jQuery) {
             var currentStep = this;
             var tour = this.tour;
             var currentStepIdx = tour.steps.indexOf(currentStep);
+            var stepEl = currentStep.el;
+
+            if (!stepEl) {
+                return;
+            }
 
             // a step can be re-shown (back/forward), so drop any stale bullets
             // this step's popup already carries before rebuilding them
-            document.querySelectorAll(".shepherd-stats").forEach(function (el) {
+            stepEl.querySelectorAll(".shepherd-stats").forEach(function (el) {
                 el.remove();
             });
 
             var progressListEl = document.createElement('ul');
             progressListEl.className = "list-unstyled shepherd-stats";
+            progressListEl.setAttribute("aria-label", ckan.i18n._("Tour progress"));
 
             for (var i = 0; i < tour.steps.length; i++) {
-                var bulletElement = document.createElement('li');
-                bulletElement.innerText = " ";
+                var itemEl = document.createElement('li');
+
+                var bulletElement = document.createElement('button');
+                bulletElement.type = "button";
+                bulletElement.className = "shepherd-stats__bullet";
                 bulletElement.dataset.stepId = tour.steps[i].id;
+                bulletElement.setAttribute(
+                    "aria-label",
+                    ckan.i18n._("Go to step %(num)s", { num: i + 1 })
+                );
 
                 if (i === currentStepIdx) {
-                    bulletElement.className = "active";
+                    bulletElement.classList.add("active");
+                    bulletElement.setAttribute("aria-current", "step");
                 }
 
                 bulletElement.addEventListener("click", function (e) {
-                    tour.show(e.target.dataset.stepId);
+                    tour.show(e.currentTarget.dataset.stepId);
                 });
 
-                progressListEl.appendChild(bulletElement);
+                itemEl.appendChild(bulletElement);
+                progressListEl.appendChild(itemEl);
             }
 
-            var footer = document.querySelector(".shepherd-footer");
+            var footer = stepEl.querySelector(".shepherd-footer");
             if (footer) {
                 footer.parentNode.insertBefore(progressListEl, footer);
             }
@@ -292,10 +307,13 @@ this.ckan.module('tour-init', function (jQuery) {
         _prepareSteps: function (steps) {
             var self = this;
 
+            var backText = '<i class="fa fa-arrow-left shepherd-button__icon" aria-hidden="true"></i><span>' + self._("Back") + '</span>';
+            var nextText = '<span>' + self._("Next") + '</span><i class="fa fa-arrow-right shepherd-button__icon" aria-hidden="true"></i>';
+
             steps.forEach(function (step, idx) {
                 var isLast = steps.length - 1 === idx;
                 var isFirst = idx === 0;
-                var lastButtonText = isLast ? self._("Done") : "→";
+                var lastButtonText = isLast ? self._("Done") : nextText;
                 var firstButtonClasses = isFirst ? 'shepherd-back disabled' : 'shepherd-back';
 
                 if (step.image_url) {
@@ -309,7 +327,7 @@ this.ckan.module('tour-init', function (jQuery) {
                     {
                         action: function () { return this.back(); },
                         classes: firstButtonClasses,
-                        text: "←"
+                        text: backText
                     },
                     {
                         action: function () { return this.next(); },
