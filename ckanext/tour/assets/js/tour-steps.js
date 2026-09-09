@@ -100,7 +100,8 @@ ckan.module("tour-steps", function ($) {
          */
         _updateStepIndexes: function (idx, step) {
             $(step).find(".step-number").text(idx);
-            $(step).find("input[name='step_index']").val(idx);
+            // step fields are namespaced as step[<id>][index]
+            $(step).find("input[name$='[index]']").val(idx);
         },
 
         _onCollapseAllSteps: function (e) {

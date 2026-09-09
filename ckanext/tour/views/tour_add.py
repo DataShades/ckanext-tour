@@ -5,6 +5,8 @@ from flask.views import MethodView
 
 import ckan.plugins.toolkit as tk
 
+from ckanext.tour.utils import parse_step_forms
+
 
 class TourAddView(MethodView):
     def get(self) -> str:
@@ -36,23 +38,12 @@ class TourAddView(MethodView):
         return tk.redirect_to("tour.list")
 
     def _prepare_payload(self):
-        step_fields = ("step_title", "step_element", "step_intro", "step_position", "step_image_id")
-
-        steps = {}
-
-        for field_name in step_fields:
-            _, field = field_name.split("_", 1)
-
-            for idx, value in enumerate(tk.request.form.getlist(field_name), start=1):
-                steps.setdefault(idx, {})
-                steps[idx][field] = value
-
         return {
             "title": tk.request.form.get("title"),
             "endpoint": tk.request.form.get("endpoint", ""),
             "auto_start": bool(tk.request.form.get("auto_start")),
             "author_id": tk.current_user.id,  # type: ignore
-            "steps": list(steps.values()),
+            "steps": parse_step_forms(tk.request.form),
         }
 
 

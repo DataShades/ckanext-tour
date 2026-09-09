@@ -2,11 +2,14 @@ import pytest
 
 from enum import IntEnum
 
-from ckan import authz
+from werkzeug.datastructures import MultiDict
+
+from ckan import authz, types
 import ckan.plugins.toolkit as tk
 
 from ckanext.tour import config
 from ckanext.tour.model import Tour
+from ckanext.tour.utils import parse_step_forms
 
 
 @pytest.fixture
@@ -185,3 +188,98 @@ class TestTourFormViews:
 
         assert resp.status_code == Status.redirect
         assert tk.url_for("tour.list") in resp.headers["location"]
+
+
+class TestParseStepForms:
+    """The step form fields are namespaced per step (``step[<id>][title]``) so a
+    missing or duplicated field for one step can't shift another step's data."""
+
+    def test_fields_are_grouped_by_step_id(self):
+        form = MultiDict()
+        form.add("step_ids", "s1")
+        form.add("step_ids", "s2")
+        for name, value in [
+            ("step[s1][id]", ""),
+            ("step[s1][title]", "First"),
+            ("step[s1][element]", ".a"),
+            ("step[s1][image_id]", "img-1"),
+            ("step[s2][id]", "db-2"),
+            ("step[s2][title]", "Second"),
+            ("step[s2][element]", ".b"),
+        ]:
+            form.add(name, value)
+
+        steps = parse_step_forms(form)
+
+        assert [s["title"] for s in steps] == ["First", "Second"]
+        assert [s["element"] for s in steps] == [".a", ".b"]
+        # s1 keeps its image; s2 simply has no image_id key -- no shifting
+        assert steps[0]["image_id"] == "img-1"
+        assert "image_id" not in steps[1]
+        assert steps[1]["id"] == "db-2"
+
+    def test_step_ids_field_drives_ordering(self):
+        form = MultiDict()
+        form.add("step_ids", "s2")
+        form.add("step_ids", "s1")
+        form.add("step[s1][title]", "First")
+        form.add("step[s2][title]", "Second")
+
+        assert [s["title"] for s in parse_step_forms(form)] == ["Second", "First"]
+
+    def test_step_missing_from_step_ids_is_still_returned(self):
+        form = MultiDict()
+        form.add("step_ids", "s1")
+        form.add("step[s1][title]", "First")
+        form.add("step[s2][title]", "Second")
+
+        assert {s["title"] for s in parse_step_forms(form)} == {"First", "Second"}
+
+    def test_no_steps(self):
+        assert parse_step_forms(MultiDict({"title": "t"})) == []
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+class TestTourStepFormSubmission:
+    def _context(self, sysadmin) -> types.Context:
+        return types.Context(user=sysadmin["name"], ignore_auth=True)
+
+    def test_create_keeps_step_fields_grouped_when_a_step_omits_a_field(
+        self, app, sysadmin
+    ):
+        data = MultiDict(
+            [
+                ("title", "Grouped tour"),
+                ("endpoint", ""),
+                ("step_ids", "s1"),
+                ("step_ids", "s2"),
+                ("step[s1][title]", "Step one"),
+                ("step[s1][element]", ".one"),
+                ("step[s1][position]", "bottom"),
+                ("step[s1][intro]", "intro one"),
+                # s2 deliberately omits `intro` entirely
+                ("step[s2][title]", "Step two"),
+                ("step[s2][element]", ".two"),
+                ("step[s2][position]", "top"),
+            ]
+        )
+
+        resp = app.post(
+            tk.url_for("tour.add"),
+            data=data,
+            headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
+        )
+
+        assert resp.status_code == Status.redirect
+
+        tour = tk.get_action("tour_list")(self._context(sysadmin), {})[0]
+        full = tk.get_action("tour_show")(
+            self._context(sysadmin), {"id": tour["id"]}
+        )
+        steps = full["steps"]
+
+        assert [s["title"] for s in steps] == ["Step one", "Step two"]
+        assert [s["element"] for s in steps] == [".one", ".two"]
+        assert steps[0]["intro"] == "intro one"
+        assert not steps[1]["intro"]

@@ -2,6 +2,10 @@
 
 {% set step_id = step.step_id or step.id or h.tour_random_step_id() %}
 
+{# Every step's controls are submitted under names namespaced by this id #}
+{% set ns = "step[" ~ step_id ~ "]" %}
+{% set image_field = ns ~ "[image_id]" %}
+
 {% if errors %}
     {% set collapse_step = false %}
 {% endif %}
@@ -38,18 +42,19 @@
             data-bs-parent="#step-{{ step_id }}">
             <div class="accordion-body">
                 <fieldset class="tour-step" id="step_{{ step_id }}" data-step-id="{{ step_id }}">
-                    {{ form.hidden("step_id", value=step.step_id or step.id) }}
-                    {{ form.hidden("step_index", value=step.step_index or step.index) }}
+                    {{ form.hidden("step_ids", value=step_id) }}
+                    {{ form.hidden(ns ~ "[id]", value=step.step_id or step.id) }}
+                    {{ form.hidden(ns ~ "[index]", value=step.step_index or step.index) }}
 
-                    {{ form.input("step_title", label=_("Tour title"), value=step.step_title or step.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}) }}
+                    {{ form.input(ns ~ "[title]", label=_("Tour title"), value=step.step_title or step.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}) }}
 
-                    {% call form.input("step_element", label=_("HTML element query"), value=step.step_element or step.element, error=errors.element, attrs={'required': 1, 'class': 'form-control'}) %}
+                    {% call form.input(ns ~ "[element]", label=_("HTML element query"), value=step.step_element or step.element, error=errors.element, attrs={'required': 1, 'class': 'form-control'}) %}
                         {{ form.info(_('Example: .dataset-list or #map')) }}
                     {% endcall %}
 
-                    {{ form.markdown("step_intro", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) }}
+                    {{ form.markdown(ns ~ "[intro]", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) }}
 
-                    {{ form.select('step_position', label=_('Position'), options=h.tour_get_position_options(), selected=step.step_position or step.position, error=errors.position) }}
+                    {{ form.select(ns ~ "[position]", label=_('Position'), options=h.tour_get_position_options(), selected=step.step_position or step.position, error=errors.position) }}
 
                     {% set image_error = errors.image or errors.image_url or errors.image_id %}
                     {% if image_error %}
@@ -60,7 +65,7 @@
 
                     {% snippet "scheming/form_snippets/files_upload_widget.html",
                         field={
-                            'field_name': 'step_image_id',
+                            'field_name': image_field,
                             'label': _('Image'),
                             'accept': 'image/*',
                             'form_attrs': {
@@ -70,7 +75,7 @@
                                 'data-module-upload-link-action': 'tour_upload_link',
                             }
                         },
-                        data={'step_image_id': step.image_id}
+                        data={image_field: step.image_id}
                     %}
 
                 </fieldset>
