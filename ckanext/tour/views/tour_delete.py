@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import contextlib
-
 from flask import Response
 from flask.views import MethodView
 
@@ -37,8 +35,25 @@ class TourDeleteView(MethodView):
 
 
 class TourStepDeleteView(MethodView):
-    def post(self, tour_step_id: str) -> str:
-        with contextlib.suppress(tk.ValidationError):
+    def post(self, tour_step_id: str) -> Response | tuple[str, int]:
+        try:
             tk.get_action("tour_step_remove")({}, {"id": tour_step_id})
+        except (tk.ObjectNotFound, tk.ValidationError) as e:
+            return tk._("Could not delete step: %s") % _reason(e), 409
 
-        return ""
+        return Response(status=204)
+
+
+def _reason(exc: tk.ObjectNotFound | tk.ValidationError) -> str:
+    """Flatten a raised action error into a single human-readable line."""
+    if isinstance(exc, tk.ValidationError):
+        messages = [
+            str(message)
+            for key, value in exc.error_dict.items()
+            if not key.startswith("__")
+            for message in (value if isinstance(value, list) else [value])
+        ]
+        if messages:
+            return " ".join(messages)
+
+    return str(getattr(exc, "message", "") or exc)

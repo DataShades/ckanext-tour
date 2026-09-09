@@ -48,10 +48,28 @@ ckan.module("tour-steps", function ($) {
                         confirmText: "Delete",
                         type: "danger",
                         onConfirm: function () {
-                            self._onRemoveStep(evt.detail.target.dataset.stepId);
                             evt.detail.issueRequest();
                         },
                     });
+                }
+            });
+
+            document.body.addEventListener('htmx:afterRequest', function (evt) {
+                var requestPath = evt.detail.pathInfo && evt.detail.pathInfo.requestPath;
+
+                if (!requestPath || !requestPath.includes("/tour/delete_step")) {
+                    return;
+                }
+
+                var stepId = evt.detail.elt.dataset.stepId;
+
+                if (evt.detail.successful) {
+                    self._onRemoveStep(stepId);
+                } else {
+                    var reason = (evt.detail.xhr && evt.detail.xhr.responseText || "").trim()
+                        || "Could not delete step. Please reload the page and try again.";
+
+                    ckan.notify(reason, "", "error");
                 }
             });
         },

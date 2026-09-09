@@ -8,7 +8,7 @@ from ckan import authz, types
 import ckan.plugins.toolkit as tk
 
 from ckanext.tour import config
-from ckanext.tour.model import Tour
+from ckanext.tour.model import Tour, TourStep
 from ckanext.tour.utils import parse_step_forms
 
 
@@ -283,3 +283,30 @@ class TestTourStepFormSubmission:
         assert [s["element"] for s in steps] == [".one", ".two"]
         assert steps[0]["intro"] == "intro one"
         assert not steps[1]["intro"]
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db")
+class TestTourStepDeleteView:
+    def test_delete_step_removes_it_and_returns_204(self, app, sysadmin, tour_factory):
+        tour = tour_factory()
+        step_id = tour["steps"][0]["id"]
+
+        app.post(
+            tk.url_for("tour.delete_step", tour_step_id=step_id),
+            headers={"Authorization": sysadmin["token"]},
+            status=204,
+        )
+
+        assert TourStep.get(step_id) is None
+
+    def test_delete_missing_step_reports_an_error(self, app, sysadmin):
+        resp = app.post(
+            tk.url_for("tour.delete_step", tour_step_id="no-such-step"),
+            headers={"Authorization": sysadmin["token"]},
+            status=409,
+        )
+
+        # the body carries the actual reason for the client to surface
+        body = resp.get_data(as_text=True)
+        assert "Could not delete step" in body
+        assert "no-such-step" in body
