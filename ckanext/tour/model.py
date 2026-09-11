@@ -3,7 +3,8 @@ from __future__ import annotations
 import logging
 from contextlib import contextmanager
 from datetime import UTC, datetime
-from typing import Any, Iterator, Self, cast
+from typing import Any, Self, cast
+from collections.abc import Iterator
 
 from sqlalchemy import (
     Boolean,
