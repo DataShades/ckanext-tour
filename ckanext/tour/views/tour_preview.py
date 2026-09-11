@@ -27,6 +27,8 @@ class TourPreviewView(MethodView):
             "endpoint": endpoint,
             "steps": parse_step_forms(tk.request.form),
         }
+
+        session.permanent = True
         session.modified = True
 
         target = _preview_target(endpoint)
