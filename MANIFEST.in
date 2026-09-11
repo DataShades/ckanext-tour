@@ -1,4 +1,4 @@
 include README.md
 include LICENSE
-recursive-include ckanext/tour *.html *.json *.js *.scss *.css *.mo *.yml *.yaml *.svg
+recursive-include ckanext/tour *.html *.json *.js *.scss *.css *.mo *.yml *.yaml *.svg *.png
 recursive-include ckanext/tour/migration *.ini *.py *.mako

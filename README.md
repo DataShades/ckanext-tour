@@ -4,6 +4,8 @@
 
 ckanext-tour is a CKAN extension that provides a guided tour feature for CKAN instances. It allows users to create interactive tours to showcase different features and functionalities of a CKAN instance.
 
+![ckanext-tour in action](https://raw.githubusercontent.com/DataShades/ckanext-tour/master/doc/example-1.png)
+
 ## Features
 - Create interactive tours with step-by-step instructions
 - Highlight specific elements on CKAN pages
