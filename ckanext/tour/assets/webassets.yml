@@ -24,3 +24,4 @@ tour-form-js:
     - js/vendor/draggable/sortable.min.js
 
     - js/tour-steps.js
+    - js/tour-translated-field.js

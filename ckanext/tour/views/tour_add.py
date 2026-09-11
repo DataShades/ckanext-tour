@@ -5,7 +5,7 @@ from flask.views import MethodView
 
 import ckan.plugins.toolkit as tk
 
-from ckanext.tour.utils import parse_step_forms
+from ckanext.tour.utils import parse_step_forms, parse_translated_field
 
 
 class TourAddView(MethodView):
@@ -39,7 +39,7 @@ class TourAddView(MethodView):
 
     def _prepare_payload(self):
         return {
-            "title": tk.request.form.get("title"),
+            "title": parse_translated_field(tk.request.form, "title"),
             "endpoint": tk.request.form.get("endpoint", ""),
             "auto_start": bool(tk.request.form.get("auto_start")),
             "author_id": tk.current_user.id,  # type: ignore

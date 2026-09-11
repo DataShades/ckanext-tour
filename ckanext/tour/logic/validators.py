@@ -8,6 +8,7 @@ import ckan.plugins.toolkit as tk
 from ckan import types
 
 import ckanext.tour.model as tour_model
+from ckanext.tour.i18n import default_locale
 
 
 def tour_tour_exist(v: str, context) -> Any:
@@ -65,5 +66,40 @@ def tour_selector_validator(value: Any) -> Any:
     """
     if value and "<" in str(value):
         raise tk.Invalid(tk._("A CSS selector cannot contain '<'"))
+
+    return value
+
+
+def tour_translated_valid(value: Any) -> dict[str, str]:
+    """Normalise a per-locale translation mapping (``{locale: text}``)."""
+    if not value:
+        return {}
+
+    if isinstance(value, str):
+        value = {default_locale(): value}
+
+    if not isinstance(value, dict):
+        raise tk.Invalid(tk._("Expected text or a mapping of locale to text"))
+
+    cleaned: dict[str, str] = {}
+
+    for locale, text in value.items():
+        if not isinstance(locale, str) or not isinstance(text, str):
+            raise tk.Invalid(tk._("Expected text or a mapping of locale to text"))
+
+        if text.strip():
+            cleaned[locale] = text.strip()
+
+    return cleaned
+
+
+def tour_translated_required(value: dict[str, str]) -> dict[str, str]:
+    """Require the default locale's translation."""
+    locale = default_locale()
+
+    if not value.get(locale):
+        raise tk.Invalid(
+            tk._("Missing value for the default language ({locale})").format(locale=locale),
+        )
 
     return value

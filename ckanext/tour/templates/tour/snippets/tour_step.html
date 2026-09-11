@@ -1,4 +1,5 @@
 {% import 'macros/form.html' as form %}
+{% from 'tour/snippets/translated_field.html' import translated_input, translated_markdown %}
 
 {% set step_id = step.step_id or step.id or h.tour_random_step_id() %}
 
@@ -46,13 +47,13 @@
                     {{ form.hidden(ns ~ "[id]", value=step.step_id or step.id) }}
                     {{ form.hidden(ns ~ "[index]", value=step.step_index or step.index) }}
 
-                    {{ form.input(ns ~ "[title]", label=_("Tour title"), value=step.step_title or step.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}) }}
+                    {{ translated_input(ns ~ "[title]", label=_("Tour title"), value=step.step_title or step.title, error=errors.title, required=true) }}
 
                     {% call form.input(ns ~ "[element]", label=_("HTML element query"), value=step.step_element or step.element, error=errors.element, attrs={'required': 1, 'class': 'form-control'}) %}
                         {{ form.info(_('Example: .dataset-list or #map')) }}
                     {% endcall %}
 
-                    {{ form.markdown(ns ~ "[intro]", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) }}
+                    {{ translated_markdown(ns ~ "[intro]", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) }}
 
                     {{ form.select(ns ~ "[position]", label=_('Position'), options=h.tour_get_position_options(), selected=step.step_position or step.position, error=errors.position) }}
 

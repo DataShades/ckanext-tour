@@ -1,0 +1,83 @@
+{% import 'macros/form.html' as form %}
+
+{#
+Renders a per-locale translation field: one input row per language actually
+in use, plus a picker to add more, rather than one input per site locale.
+
+name        - The base form field name. Each locale's value is submitted as
+              name[<locale_code>].
+label       - The human-readable label, reused (with the locale code
+              appended) on every row.
+value       - The current translation, either a {locale: text} mapping or a
+              plain string (treated as the default locale's value).
+error       - Error string(s) for the field, shown on the default locale's
+              row.
+required    - (translated_input only) Whether the default locale's row is
+              required.
+attrs       - (translated_input only) Extra attributes applied to each
+              <input> element.
+
+Examples:
+
+{% from 'tour/snippets/translated_field.html' import translated_input, translated_markdown %}
+
+{{ translated_input('title', label=_('Title'), value=data.title, error=errors.title, required=true) }}
+{{ translated_markdown('body', label=_('Body'), value=data.body, error=errors.body) }}
+#}
+
+{% macro translated_input(name, label, value, error, required=false, attrs={'class': 'form-control'}) %}
+    {{ _translated_field("input", name, label, value, error, required, attrs) }}
+{% endmacro %}
+
+{% macro translated_markdown(name, label, value, error) %}
+    {{ _translated_field("markdown", name, label, value, error, false, {}) }}
+{% endmacro %}
+
+{% macro _translated_field(kind, name, label, value, error, required, attrs) %}
+    {% set default_locale = h.tour_default_locale() %}
+    {% set filled_locales = (value or {}).keys() | list %}
+    {% set shown_locales = [default_locale] + (filled_locales | reject("equalto", default_locale) | list) %}
+    {% set all_locales = h.get_available_locales() %}
+    {% set remaining_locales = all_locales | rejectattr("short_name", "in", shown_locales) | list %}
+    {% set locale_labels = {} %}
+    {% for locale in all_locales %}
+        {% do locale_labels.update({locale.short_name: locale.display_name or locale.english_name}) %}
+    {% endfor %}
+
+    <div class="tour-translated-field form-group" data-module="tour-translated-field" data-module-name="{{ name }}" data-module-kind="{{ kind }}">
+        <div class="tour-translated-field__rows">
+            {% for locale_code in shown_locales %}
+                {% set is_default = locale_code == default_locale %}
+                {% set field_label = label if is_default else label ~ " (" ~ locale_code ~ ")" %}
+                {% set field_attrs = dict(attrs) %}
+                {% if required and is_default %}
+                    {% do field_attrs.update({"required": 1}) %}
+                {% endif %}
+
+                {% if kind == "markdown" %}
+                    {% call form.markdown(name ~ "[" ~ locale_code ~ "]", label=field_label, value=(value or {}).get(locale_code, ""), error=error if is_default else none, classes=["tour-translated-field__row"]) %}
+                        {% if not is_default %}
+                            <button type="button" class="btn btn-sm btn-link tour-translated-field__remove" data-locale-code="{{ locale_code }}" data-locale-label="{{ locale_labels.get(locale_code, locale_code) }}">{{ _("Remove") }}</button>
+                        {% endif %}
+                    {% endcall %}
+                {% else %}
+                    {% call form.input(name ~ "[" ~ locale_code ~ "]", label=field_label, value=(value or {}).get(locale_code, ""), error=error if (required and is_default) else none, attrs=field_attrs, is_required=(required and is_default), classes=["tour-translated-field__row"]) %}
+                        {% if not is_default %}
+                            <button type="button" class="btn btn-sm btn-link tour-translated-field__remove" data-locale-code="{{ locale_code }}" data-locale-label="{{ locale_labels.get(locale_code, locale_code) }}">{{ _("Remove") }}</button>
+                        {% endif %}
+                    {% endcall %}
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        {% if remaining_locales %}
+            {% set picker_id = "field-" ~ (name ~ "-add-language") | replace("[", "-") | replace("]", "-") %}
+            <select id="{{ picker_id }}" name="{{ picker_id }}" aria-label="{{ _('Add a language for {label}').format(label=label) }}" class="form-select form-select-sm tour-translated-field__picker" data-module="autocomplete">
+                <option value="">{{ _("+ Add language") }}</option>
+                {% for locale in remaining_locales %}
+                    <option value="{{ locale.short_name }}">{{ locale.display_name or locale.english_name }}</option>
+                {% endfor %}
+            </select>
+        {% endif %}
+    </div>
+{% endmacro %}

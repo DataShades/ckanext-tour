@@ -9,6 +9,7 @@ from ckan.types import Context
 
 import ckanext.tables.shared as t
 
+from ckanext.tour import i18n
 from ckanext.tour.model import Tour, TourStep
 
 
@@ -22,13 +23,18 @@ class TourTable(t.TableDefinition):
             select(TourStep.tour_id, func.count(TourStep.id).label("steps")).group_by(TourStep.tour_id).subquery()
         )
 
+        title = func.coalesce(
+            Tour.title[i18n.current_locale()].astext,
+            Tour.title[i18n.default_locale()].astext,
+        ).label("title")
+
         super().__init__(
             name="tours",
             table_template="tour/tour_table.html",
             data_source=t.DatabaseDataSource(
                 stmt=select(
                     Tour.id,
-                    Tour.title,
+                    title,
                     Tour.state,
                     Tour.endpoint,
                     Tour.created_at,
@@ -109,6 +115,7 @@ class TourTable(t.TableDefinition):
                     label=tk._("Add Tour"),
                     icon="fa fa-plus",
                     callback=self.table_action_add_tour,
+                    with_confirmation=False,
                 ),
             ],
         )

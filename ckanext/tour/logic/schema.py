@@ -24,12 +24,14 @@ def tour_create(
     one_of,
     ignore,
     boolean_validator,
+    tour_translated_valid,
+    tour_translated_required,
 ) -> Schema:
     step_schema = tour_step_schema()
     step_schema["tour_id"] = [ignore_missing]
 
     return {
-        "title": [not_empty, unicode_safe],
+        "title": [not_empty, tour_translated_valid, tour_translated_required],
         "endpoint": [ignore_missing, unicode_safe],
         "auto_start": [default(False), boolean_validator],
         "author_id": [not_empty, user_id_or_name_exists],
@@ -51,13 +53,16 @@ def tour_update(
     ignore_missing,
     one_of,
     boolean_validator,
+    tour_translated_valid,
+    tour_translated_required,
 ) -> Schema:
     tour_schema = tour_create()
     tour_schema["id"] = [not_empty, unicode_safe, tour_tour_exist]
     tour_schema["steps"] = tour_step_update()
 
-    # non-mandatory
-    tour_schema["title"] = [ignore_empty, unicode_safe]
+    # non-mandatory: keep the tour's current title unless new translations
+    # are explicitly submitted
+    tour_schema["title"] = [ignore_empty, tour_translated_valid, tour_translated_required]
 
     # keep the tour's current values unless new ones are explicitly submitted
     tour_schema["state"] = [
@@ -83,11 +88,12 @@ def tour_step_schema(  # noqa: PLR0913
     tour_tour_exist,
     tour_url_validator,
     tour_selector_validator,
+    tour_translated_valid,
 ) -> Schema:
     return {
-        "title": [ignore_missing, unicode_safe],
+        "title": [ignore_missing, tour_translated_valid],
         "element": [not_empty, unicode_safe, tour_selector_validator],
-        "intro": [ignore_missing, unicode_safe],
+        "intro": [ignore_missing, tour_translated_valid],
         "position": [
             default(TourStep.Position.bottom),
             one_of(

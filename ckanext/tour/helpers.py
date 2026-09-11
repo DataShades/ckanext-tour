@@ -30,6 +30,11 @@ def tour_is_admin_panel_enabled() -> bool:
     return p.plugin_loaded("admin_panel")
 
 
+def tour_default_locale() -> str:
+    """The portal's default locale."""
+    return i18n.default_locale()
+
+
 def tour_get_position_options():
     return [
         {"value": step, "text": step}
@@ -151,8 +156,8 @@ def _preview_tour() -> dict[str, Any] | None:
             "id": step.get("id") or f"preview-{idx}",
             "element": step.get("element") or "",
             "position": step.get("position") or TourStep.Position.bottom,
-            "title": step.get("title") or "",
-            "intro": tk.h.render_markdown(step.get("intro") or ""),
+            "title": i18n.localize(step.get("title")),
+            "intro": tk.h.render_markdown(i18n.localize(step.get("intro"))),
             "image_url": _step_image_href(step.get("image_id")),
         }
         for idx, step in enumerate(stashed["steps"])
@@ -160,7 +165,7 @@ def _preview_tour() -> dict[str, Any] | None:
 
     return {
         "id": "tour-preview",
-        "title": stashed.get("title") or str(tk._("Tour preview")),
+        "title": i18n.localize(stashed.get("title")) or str(tk._("Tour preview")),
         "auto_start": True,
         "preview": True,
         "steps": steps,

@@ -169,7 +169,7 @@ class TestTourUpdate:
 
         updated_tour = call_action("tour_update", **tour)
 
-        assert updated_tour["title"] == "xxx"
+        assert updated_tour["title"] == {"en": "xxx"}
         assert updated_tour["endpoint"] == "dataset.read"
         assert updated_tour["auto_start"] is True
 
@@ -250,7 +250,7 @@ class TestTourUpdate:
             ],
         )
 
-        assert [s["title"] for s in result["steps"]] == ["s1"]
+        assert [s["title"] for s in result["steps"]] == [{"en": "s1"}]
 
     def test_update_existing_step_via_update(self, tour_factory, tour_step_factory):
         tour = tour_factory(steps=[])
@@ -271,7 +271,7 @@ class TestTourUpdate:
             ],
         )
 
-        assert result["steps"][0]["title"] == "new"
+        assert result["steps"][0]["title"] == {"en": "new"}
         assert result["steps"][0]["position"] == "top"
 
     def test_step_missing_from_payload_is_deleted(self, tour_factory, tour_step_factory):
@@ -378,7 +378,7 @@ class TestTourStepUpdate:
         )
 
         shown = call_action("tour_show", id=tour["id"])
-        assert shown["steps"][0]["title"] == "new"
+        assert shown["steps"][0]["title"] == {"en": "new"}
 
     def test_partial_update_keeps_omitted_optional_fields(self, tour_factory, tour_step_factory):
         """`title` / `intro` are `ignore_missing`; omitting them must keep the
@@ -390,8 +390,8 @@ class TestTourStepUpdate:
 
         shown = call_action("tour_show", id=tour["id"])["steps"][0]
         assert shown["element"] == ".changed"
-        assert shown["title"] == "keep-title"
-        assert shown["intro"] == "keep-intro"
+        assert shown["title"] == {"en": "keep-title"}
+        assert shown["intro"] == {"en": "keep-intro"}
 
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")

@@ -1,4 +1,5 @@
 {% import 'macros/form.html' as form %}
+{% from 'tour/snippets/translated_field.html' import translated_input %}
 
 {% set collapse_step = h.tour_collapse_steps() %}
 
@@ -17,9 +18,7 @@
         </div>
     {% endif %}
 
-    {% call form.input("title", label=_("Tour title"), value=data.title, error=errors.title, attrs={'required': 1, 'class': 'form-control'}, is_required=1) %}
-        {{ form.info(_("A tour title to explain what is it for")) }}
-    {% endcall %}
+    {{ translated_input("title", label=_("Tour title"), value=data.title, error=errors.title, required=true) }}
 
     {% call form.select("endpoint", label=_("Show on"), selected=data.endpoint or "", error=errors.endpoint, options=h.tour_get_page_options(), attrs={'class': 'form-control', 'data-module': 'autocomplete'}) %}
         {{ form.info(_('Which page shows this tour. "Everywhere" adds it to every page; a parametrised route (e.g. dataset.read) covers every page of that type.', classes=['info-help-tight'])) }}
@@ -34,7 +33,7 @@
             {"value": "active", "text": _("Active")},
             {"value": "inactive", "text": _("Inactive")},
         ]) %}
-            {{ form.info(_("Inactive tours are hidden from visitors.")) }}
+            {{ form.info(_("Inactive tours are hidden from visitors and via API.")) }}
         {% endcall %}
     {% endif %}
 

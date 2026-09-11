@@ -140,6 +140,69 @@ class TestTourFormViews:
 
         assert resp.status_code == Status.not_found
 
+    def test_edit_post_updates_and_redirects(self, app, sysadmin, tour_factory):
+        tour = tour_factory(steps=[], title="Original", endpoint="")
+
+        resp = app.post(
+            tk.url_for("tour.edit", tour_id=tour["id"]),
+            data=MultiDict(
+                [
+                    ("title[en]", "Updated"),
+                    ("endpoint", "dataset.search"),
+                    ("state", Tour.State.active),
+                ]
+            ),
+            headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
+        )
+
+        assert resp.status_code == Status.redirect
+        assert tk.url_for("tour.list") in resp.headers["location"]
+
+        updated = TourStep.get_by_tour(tour["id"])
+        assert updated == []
+
+        shown = tk.get_action("tour_show")(
+            {"user": sysadmin["name"], "ignore_auth": True},
+            {"id": tour["id"]},
+        )
+        assert shown["title"] == {"en": "Updated"}
+        assert shown["endpoint"] == "dataset.search"
+
+    def test_edit_post_missing_tour_returns_404(self, app, sysadmin):
+        resp = app.post(
+            tk.url_for("tour.edit", tour_id="no-such-id"),
+            data=MultiDict([("title[en]", "Updated")]),
+            headers={"Authorization": sysadmin["token"]},
+            status=Status.not_found,
+        )
+
+        assert resp.status_code == Status.not_found
+
+    def test_edit_post_missing_default_locale_rerenders_with_errors(self, app, sysadmin, tour_factory):
+        """Submitting a translation for a non-default locale only must not
+        silently drop the requirement that the default locale be filled in --
+        the form re-renders with the validation error instead of saving."""
+        tour = tour_factory(steps=[], title="Original")
+
+        resp = app.post(
+            tk.url_for("tour.edit", tour_id=tour["id"]),
+            data=MultiDict([("title[es]", "Solo en espanol")]),
+            headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
+        )
+
+        assert resp.status_code == Status.success
+
+        body = resp.get_data(as_text=True)
+        assert "Missing value for the default language" in body
+
+        shown = tk.get_action("tour_show")(
+            {"user": sysadmin["name"], "ignore_auth": True},
+            {"id": tour["id"]},
+        )
+        assert shown["title"] == {"en": "Original"}
+
     def test_delete_confirmation_page_renders(self, app, sysadmin, tour_factory):
         tour = tour_factory(steps=[])
 
@@ -241,7 +304,7 @@ class TestTourStepFormSubmission:
     def test_create_keeps_step_fields_grouped_when_a_step_omits_a_field(self, app, sysadmin):
         data = MultiDict(
             [
-                ("title", "Grouped tour"),
+                ("title[en]", "Grouped tour"),
                 ("endpoint", ""),
                 ("step_ids", "s1"),
                 ("step_ids", "s2"),
@@ -269,9 +332,9 @@ class TestTourStepFormSubmission:
         full = tk.get_action("tour_show")(self._context(sysadmin), {"id": tour["id"]})
         steps = full["steps"]
 
-        assert [s["title"] for s in steps] == ["Step one", "Step two"]
+        assert [s["title"] for s in steps] == [{"en": "Step one"}, {"en": "Step two"}]
         assert [s["element"] for s in steps] == [".one", ".two"]
-        assert steps[0]["intro"] == "intro one"
+        assert steps[0]["intro"] == {"en": "intro one"}
         assert not steps[1]["intro"]
 
 
@@ -307,7 +370,7 @@ class TestTourPreview:
     def _preview_form(self):
         return MultiDict(
             [
-                ("title", "Preview me"),
+                ("title[en]", "Preview me"),
                 ("endpoint", "dataset.search"),
                 ("step_ids", "s1"),
                 ("step[s1][element]", ".dataset-list"),

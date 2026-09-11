@@ -6,7 +6,8 @@ from flask.views import MethodView
 import ckan.plugins.toolkit as tk
 from ckan.types import Response
 
-from ckanext.tour.utils import PREVIEW_KEY, parse_step_forms
+from ckanext.tour import i18n
+from ckanext.tour.utils import PREVIEW_KEY, parse_step_forms, parse_translated_field
 
 
 class TourPreviewView(MethodView):
@@ -19,9 +20,10 @@ class TourPreviewView(MethodView):
 
     def post(self) -> Response:
         endpoint = tk.request.form.get("endpoint", "")
+        title = parse_translated_field(tk.request.form, "title")
 
         session[PREVIEW_KEY] = {
-            "title": tk.request.form.get("title") or str(tk._("Tour preview")),
+            "title": title or {i18n.default_locale(): str(tk._("Tour preview"))},
             "endpoint": endpoint,
             "steps": parse_step_forms(tk.request.form),
         }

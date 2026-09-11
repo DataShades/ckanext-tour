@@ -1,5 +1,21 @@
 @use 'variables' as vars;
 
+.tour-translated-field {
+    .tour-translated-field__rows {
+        .tour-translated-field__row {
+            margin-bottom: 8px;
+        }
+    }
+
+    .tour-translated-field__remove {
+        padding: 0;
+    }
+
+    .tour-translated-field__picker {
+        max-width: 260px;
+    }
+}
+
 .tour-steps {
     margin-bottom: 16px;
 
