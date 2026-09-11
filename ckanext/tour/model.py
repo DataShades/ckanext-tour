@@ -15,6 +15,7 @@ from sqlalchemy import (
     select,
     update,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine import Connection
 from sqlalchemy.orm import Mapped, Mapper, mapped_column, relationship
 
@@ -39,7 +40,7 @@ class Tour(tk.BaseModel):
 
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=make_uuid)
 
-    title: Mapped[str] = mapped_column(Text)
+    title: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     state: Mapped[str] = mapped_column(Text, default=State.active)
     author_id: Mapped[str] = mapped_column(
         Text,
@@ -179,9 +180,9 @@ class TourStep(tk.BaseModel):
     id: Mapped[str] = mapped_column(Text, primary_key=True, default=make_uuid)
 
     index: Mapped[int | None] = mapped_column()
-    title: Mapped[str | None] = mapped_column(Text)
+    title: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     element: Mapped[str | None] = mapped_column(Text)
-    intro: Mapped[str | None] = mapped_column(Text)
+    intro: Mapped[dict[str, str]] = mapped_column(JSONB, default=dict)
     position: Mapped[str | None] = mapped_column(Text, default=Position.bottom)
     tour_id: Mapped[str] = mapped_column(
         Text,

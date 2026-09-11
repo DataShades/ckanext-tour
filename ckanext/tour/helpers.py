@@ -9,7 +9,7 @@ import ckan.plugins.toolkit as tk
 import ckan.plugins as p
 from ckan.model.types import make_uuid
 
-from ckanext.tour import config
+from ckanext.tour import config, i18n
 from ckanext.tour.model import Tour, TourStep
 from ckanext.tour.utils import PREVIEW_KEY
 
@@ -117,8 +117,11 @@ def tour_get_page_tours() -> list[dict[str, Any]]:
     payload = [tour.dictize({}, WIDGET_FIELDS) for tour in tours]
 
     for tour in payload:
+        tour["title"] = i18n.localize(tour.get("title"))
+
         for step in tour.get("steps", []):
-            step["intro"] = tk.h.render_markdown(step.get("intro") or "")
+            step["title"] = i18n.localize(step.get("title"))
+            step["intro"] = tk.h.render_markdown(i18n.localize(step.get("intro")))
 
     preview = _preview_tour()
 
