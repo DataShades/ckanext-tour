@@ -50,7 +50,8 @@
             {{ _("Expand all steps") if collapse_step else _("Collapse all steps") }}
         </button>
         <button class="add-step btn btn-sm btn-outline-secondary" hx-trigger="click" hx-post="{{ h.url_for('tour.add_step') }}" type="button"
-            hx-vals='' hx-swap="outerHTML" hx-target=".next-tour">
+            hx-vals='js:{step_index: document.querySelectorAll(".tour-steps__steps .tour-accordion").length + 1}'
+            hx-swap="outerHTML" hx-target=".next-tour">
             <i class="fa fa-plus"></i>
             {{ _("Add step") }}
         </button>

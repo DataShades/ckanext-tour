@@ -1,7 +1,8 @@
 {% import 'macros/form.html' as form %}
 {% from 'tour/snippets/translated_field.html' import translated_input, translated_markdown %}
 
-{% set step_id = step.step_id or step.id or h.tour_random_step_id() %}
+{% set step_id = step.id or h.tour_random_step_id() %}
+{% set is_persisted = step.id %}
 
 {# Every step's controls are submitted under names namespaced by this id #}
 {% set ns = "step[" ~ step_id ~ "]" %}
@@ -24,8 +25,10 @@
             <button
                 class="remove-step btn btn-danger btn-sm"
                 data-step-id="{{ step_id }}"
+                {% if is_persisted %}
                 hx-trigger="click"
                 hx-post="{{ h.url_for('tour.delete_step', tour_step_id=step_id) }}"
+                {% endif %}
                 >
                 {{ _("Delete step") }}
             </button>
@@ -44,18 +47,18 @@
             <div class="accordion-body">
                 <fieldset class="tour-step" id="step_{{ step_id }}" data-step-id="{{ step_id }}">
                     {{ form.hidden("step_ids", value=step_id) }}
-                    {{ form.hidden(ns ~ "[id]", value=step.step_id or step.id) }}
-                    {{ form.hidden(ns ~ "[index]", value=step.step_index or step.index) }}
+                    {{ form.hidden(ns ~ "[id]", value=step.id) }}
+                    {{ form.hidden(ns ~ "[index]", value=step.index) }}
 
-                    {{ translated_input(ns ~ "[title]", label=_("Tour title"), value=step.step_title or step.title, error=errors.title, required=true) }}
+                    {{ translated_input(ns ~ "[title]", label=_("Tour title"), value=step.title, error=errors.title, required=true) }}
 
-                    {% call form.input(ns ~ "[element]", label=_("Target element"), value=step.step_element or step.element, error=errors.element, attrs={'required': 1, 'class': 'form-control'}) %}
+                    {% call form.input(ns ~ "[element]", label=_("Target element"), value=step.element, error=errors.element, attrs={'required': 1, 'class': 'form-control'}) %}
                         {{ form.info(_('A CSS selector for the page element this step points at and highlights, e.g. ".dataset-list" or "#map". Right-click the element in your browser and "Inspect" to find one — if nothing on the page matches it, the step still shows, just centered and pointing at nothing.')) }}
                     {% endcall %}
 
-                    {{ translated_markdown(ns ~ "[intro]", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) }}
+                    {{ translated_markdown(ns ~ "[intro]", label=_("Intro"), value=step.intro, error=errors.intro) }}
 
-                    {{ form.select(ns ~ "[position]", label=_('Position'), options=h.tour_get_position_options(), selected=step.step_position or step.position, error=errors.position) }}
+                    {{ form.select(ns ~ "[position]", label=_('Position'), options=h.tour_get_position_options(), selected=step.position, error=errors.position) }}
 
                     {% set image_error = errors.image or errors.image_url or errors.image_id %}
                     {% if image_error %}

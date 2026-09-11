@@ -13,6 +13,19 @@ ckan.module("tour-steps", function ($) {
             // add event listeners
             $(document).on('click', '.btn-collapse-steps', this._onCollapseAllSteps);
 
+            // An unsaved step (just added, never sent to the server) has no
+            // hx-post on its remove button -- see tour_step.html -- since
+            // there's nothing server-side to delete. Still confirm: the user
+            // may have already typed real content into it. Remove it
+            // client-side only, with no server round-trip.
+            $(document).on('click', '.remove-step:not([hx-post])', function (e) {
+                var stepId = $(e.currentTarget).data('step-id');
+
+                self._confirmStepDeletion(function () {
+                    self._onRemoveStep(stepId);
+                });
+            });
+
             // HTMX events
             document.body.addEventListener('htmx:afterSwap', function (e) {
                 let requestPath = e.detail.pathInfo.requestPath;
@@ -42,15 +55,8 @@ ckan.module("tour-steps", function ($) {
                 if (evt.detail.path.includes("/tour/delete_step")) {
                     evt.preventDefault();
 
-                    ckan.confirm({
-                        message: "Are you sure you wish to delete a step?",
-                        title: "Confirm deletion",
-                        icon: "<i class='fa fa-trash me-2'></i>",
-                        confirmText: "Delete",
-                        type: "danger",
-                        onConfirm: function () {
-                            evt.detail.issueRequest();
-                        },
+                    self._confirmStepDeletion(function () {
+                        evt.detail.issueRequest();
                     });
                 }
             });
@@ -72,6 +78,24 @@ ckan.module("tour-steps", function ($) {
 
                     ckan.notify(reason, "", "error");
                 }
+            });
+        },
+
+        /**
+         * Shared "are you sure" prompt for removing a step, whether or not
+         * it's been saved yet -- the user may have already typed real
+         * content into it either way.
+         *
+         * @param {Function} onConfirm
+         */
+        _confirmStepDeletion: function (onConfirm) {
+            ckan.confirm({
+                message: "Are you sure you wish to delete a step?",
+                title: "Confirm deletion",
+                icon: "<i class='fa fa-trash me-2'></i>",
+                confirmText: "Delete",
+                type: "danger",
+                onConfirm: onConfirm,
             });
         },
 

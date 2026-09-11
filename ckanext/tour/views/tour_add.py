@@ -49,4 +49,17 @@ class TourAddView(MethodView):
 
 class TourAddStepView(MethodView):
     def post(self) -> str:
-        return tk.render("tour/snippets/tour_step.html", extra_vars={"step": {}, "errors": {}})
+        try:
+            step_index = int(tk.request.form.get("step_index", 0))
+        except (TypeError, ValueError):
+            step_index = 0
+
+        return tk.render(
+            "tour/snippets/tour_step.html",
+            extra_vars={
+                "step": {},
+                "errors": {},
+                "step_index": step_index,
+                "collapse_step": tk.h.tour_collapse_steps(),
+            },
+        )
