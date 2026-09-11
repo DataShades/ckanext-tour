@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import logging
+from contextlib import contextmanager
 from datetime import UTC, datetime
-from typing import Any, Self, cast
+from typing import Any, Iterator, Self, cast
 
 from sqlalchemy import (
     Boolean,
@@ -29,6 +30,24 @@ log = logging.getLogger(__name__)
 
 def utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+@contextmanager
+def _autoflush_disabled() -> Iterator[None]:
+    """Suspend the session's autoflush for a delete whose cascade/event
+    listeners (e.g. ``_bump_tour_modified_at``) must not trigger a premature
+    flush -- restoring whatever the flag was before on the way out, since
+    ``model.Session`` is a shared, thread-local session that easily outlives
+    a single ``delete()`` call.
+    """
+    session = model.Session()
+    previous = session.autoflush
+    session.autoflush = False
+
+    try:
+        yield
+    finally:
+        session.autoflush = previous
 
 
 class Tour(tk.BaseModel):
@@ -87,8 +106,8 @@ class Tour(tk.BaseModel):
         model.Session.expire(self, ["steps"])
 
     def delete(self) -> None:
-        model.Session().autoflush = False
-        model.Session.delete(self)
+        with _autoflush_disabled():
+            model.Session.delete(self)
 
     def dictize(
         self,
@@ -203,8 +222,8 @@ class TourStep(tk.BaseModel):
         return tour_step
 
     def delete(self) -> None:
-        model.Session().autoflush = False
-        model.Session.delete(self)
+        with _autoflush_disabled():
+            model.Session.delete(self)
 
     @classmethod
     def get(cls, tour_step_id: str) -> Self | None:
