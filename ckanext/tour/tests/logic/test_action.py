@@ -79,6 +79,28 @@ class TestTourCreate:
         assert "image" in errors["steps"][1]
         assert not tour_model.Tour.all()
 
+    def test_non_validation_step_failure_also_clears_the_parent(self, sysadmin, monkeypatch):
+        """A step failure that isn't a ValidationError (e.g. a storage backend
+        erroring) must not leave the tour behind with no/partial steps either --
+        and the original exception must propagate, not get swallowed or
+        reshaped into a ValidationError."""
+
+        def _boom(data_dict):
+            raise RuntimeError("storage backend unreachable")
+
+        monkeypatch.setattr(tour_model.TourStep, "create", staticmethod(_boom))
+
+        with pytest.raises(RuntimeError, match="storage backend unreachable"):
+            call_action(
+                "tour_create",
+                context={"user": sysadmin["name"]},
+                title="t",
+                author_id=sysadmin["id"],
+                steps=[{"title": "ok", "element": ".a", "intro": "i"}],
+            )
+
+        assert not tour_model.Tour.all()
+
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourStepCreate:

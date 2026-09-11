@@ -124,13 +124,19 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
                 {"ignore_auth": True},
                 step,
             )
-        except tk.ValidationError as e:
+        except Exception as e:
+            # Any step failure -- validation or otherwise (e.g. a storage
+            # backend erroring on the image upload) -- must not leave `tour`
+            # behind with no steps, or fewer than intended.
             tk.get_action("tour_remove")(
                 {"ignore_auth": True},
                 {"id": tour.id},
             )
 
-            raise tk.ValidationError(_namespace_step_errors(e.error_dict, index, len(steps))) from e
+            if isinstance(e, tk.ValidationError):
+                raise tk.ValidationError(_namespace_step_errors(e.error_dict, index, len(steps))) from e
+
+            raise
 
     tour.reload_steps()
 
