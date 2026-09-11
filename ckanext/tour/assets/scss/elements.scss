@@ -40,7 +40,7 @@
 
             .remove-step {
                 position: absolute;
-                right: 0;
+                inset-inline-end: 0;
                 top: 0;
             }
 
@@ -65,10 +65,9 @@
                 align-items: center;
                 gap: 8px;
                 padding: 6px;
-                background-color: #F5F5F5;
 
                 .accordion-header--text {
-                    margin-right: auto;
+                    margin-inline-end: auto;
                     display: flex;
                     align-items: center;
                     font-size: 14px;
@@ -154,6 +153,7 @@
     border-radius: 6px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, .3);
 
+    // same physical-corner reasoning as .tour-launcher above
     &.tour-launcher-menu--bottom-right {
         right: 20px;
     }
@@ -168,7 +168,7 @@
         padding: 8px 16px;
         border: none;
         background: none;
-        text-align: left;
+        text-align: start;
         font-size: 14px;
         color: vars.$black;
         cursor: pointer;
@@ -193,8 +193,11 @@
         background-color: vars.$white !important;
     }
 
-    .shepherd-content {
+    &.shepherd-has-title .shepherd-content .shepherd-header {
+        background-color: vars.$white;
+    }
 
+    .shepherd-content {
         .shepherd-header {
             background-color: vars.$white;
 
@@ -280,7 +283,6 @@
                 padding: 0.5rem 1rem;
                 border: 1px solid #bdbdbd;
                 text-decoration: none;
-                text-shadow: 1px 1px 0 #fff;
                 font-size: 14px;
                 line-height: 1;
                 background-color: #f4f4f4;
@@ -311,6 +313,100 @@
                     text-decoration: none;
                     pointer-events: none;
                 }
+            }
+        }
+    }
+}
+
+// Dark theme
+
+html[data-theme="dark"] {
+    .shepherd-element.tour-step {
+        background: var(--dm-surface);
+        border-color: var(--dm-border);
+        color: var(--dm-text);
+
+        .shepherd-arrow:before {
+            background: var(--dm-surface) !important;
+        }
+
+        // matches the .shepherd-has-title specificity bump above
+        &.shepherd-has-title .shepherd-content .shepherd-header {
+            background: var(--dm-surface);
+        }
+
+        .shepherd-content {
+            .shepherd-title {
+                color: var(--dm-text);
+            }
+
+            .shepherd-cancel-icon {
+                color: var(--dm-text-muted);
+
+                &:hover {
+                    color: var(--dm-text);
+                }
+            }
+
+            .shepherd-header {
+                background: var(--dm-surface);
+            }
+
+            .shepherd-text {
+                color: var(--dm-text);
+            }
+
+            .shepherd-stats .shepherd-stats__bullet {
+                background: var(--dm-border);
+
+                &.active,
+                &:hover,
+                &:focus,
+                &:active {
+                    background: var(--dm-text-muted);
+                }
+
+                &:focus-visible {
+                    outline-color: var(--dm-text-muted);
+                }
+            }
+
+            .shepherd-footer {
+                border-top-color: var(--dm-border);
+
+                button {
+                    color: var(--dm-text);
+                    border-color: var(--dm-border);
+                    background-color: var(--dm-surface);
+
+                    &:hover,
+                    &:focus,
+                    &:active {
+                        border-color: var(--dm-border);
+                        background-color: var(--dm-surface-alt);
+                        color: var(--dm-text);
+                    }
+
+                    &.disabled {
+                        color: var(--dm-text-muted);
+                        border-color: var(--dm-border);
+                        background-color: var(--dm-surface);
+                    }
+                }
+            }
+        }
+    }
+
+    .tour-launcher-menu {
+        background: var(--dm-surface);
+        border: 1px solid var(--dm-border);
+
+        .tour-launcher-menu__item {
+            color: var(--dm-text);
+
+            &:hover,
+            &:focus {
+                background-color: var(--dm-surface-alt);
             }
         }
     }
