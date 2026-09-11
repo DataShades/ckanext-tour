@@ -106,29 +106,50 @@
     position: fixed;
     bottom: 20px;
     z-index: 1030;
-    width: 48px;
-    height: 48px;
+    width: 52px;
+    height: 52px;
     padding: 0;
     border: none;
     border-radius: 50%;
     background-color: var(--bs-primary, #206b82);
     color: vars.$white;
-    font-size: 20px;
-    line-height: 48px;
+    font-size: 21px;
     text-align: center;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, .3);
-    cursor: pointer;
-    transition: transform .1s ease-in, background-color .1s ease-in;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .28), 0 1px 3px rgba(0, 0, 0, .18);
+    overflow: hidden;
+    transition: transform .2s cubic-bezier(.34, 1.56, .64, 1), box-shadow .2s ease;
 
-    &:hover,
+    &:before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at 32% 28%, rgba(255, 255, 255, .35), transparent 60%);
+        pointer-events: none;
+    }
+
+    i {
+        position: relative;
+        display: block;
+        line-height: 52px;
+        transition: transform .25s cubic-bezier(.34, 1.56, .64, 1);
+    }
+
+    &:hover {
+        transform: scale(1.08) translateY(-2px);
+        box-shadow: 0 8px 22px rgba(0, 0, 0, .32), 0 2px 6px rgba(0, 0, 0, .2);
+    }
+
+    &:active {
+        transform: scale(.95);
+    }
+
     &:focus {
-        transform: scale(1.05);
         outline: none;
     }
 
     &:focus-visible {
         outline: 2px solid vars.$white;
-        outline-offset: 2px;
+        outline-offset: 3px;
     }
 
     &.tour-launcher--bottom-right {
@@ -142,42 +163,160 @@
 
 .tour-launcher-menu {
     position: fixed;
-    bottom: 76px;
+    bottom: 80px;
     z-index: 1030;
-    margin: 0;
-    padding: 6px 0;
-    list-style: none;
-    min-width: 200px;
-    max-width: 320px;
+    width: 260px;
+    border-radius: 14px;
     background-color: vars.$white;
-    border-radius: 6px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, .3);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, .22), 0 3px 9px rgba(0, 0, 0, .14);
+    overflow: hidden;
 
-    // same physical-corner reasoning as .tour-launcher above
+    // Frosted glass on browsers that support it; solid vars.$white above
+    // covers everything else -- an unsupported backdrop-filter value makes
+    // the whole declaration invalid and it's skipped, so this only ever
+    // enhances, never breaks, the fallback.
+    @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+        background-color: rgba(255, 255, 255, .78);
+        backdrop-filter: blur(18px) saturate(1.6);
+        -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    }
+
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(.9) translateY(8px);
+    transition: opacity .16s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1), visibility 0s linear .18s;
+
+    &.tour-launcher-menu--open {
+        opacity: 1;
+        visibility: visible;
+        transform: scale(1) translateY(0);
+        transition: opacity .16s ease, transform .18s cubic-bezier(.34, 1.56, .64, 1);
+
+        .tour-launcher-menu__item {
+            animation: tour-launcher-menu-item-in .22s cubic-bezier(.2, .8, .3, 1) backwards;
+
+            @for $i from 1 through 8 {
+                &:nth-child(#{$i}) {
+                    animation-delay: #{$i * 28}ms;
+                }
+            }
+        }
+    }
+
+    // same physical-corner reasoning as .tour-launcher above; transform-origin
+    // matches it too, so the menu visibly pops out of the launcher button
+    // rather than just fading in place
     &.tour-launcher-menu--bottom-right {
         right: 20px;
+
+        &:after {
+            right: 20px;
+        }
     }
 
     &.tour-launcher-menu--bottom-left {
         left: 20px;
+
+        &:after {
+            left: 20px;
+        }
+    }
+
+    .tour-launcher-menu__header {
+        padding: 12px 16px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: rgba(0, 0, 0, .5);
+        border-bottom: 1px solid rgba(0, 0, 0, .08);
+    }
+
+    .tour-launcher-menu__list {
+        margin: 0;
+        padding: 6px;
+        list-style: none;
+        max-height: 320px;
+        overflow-y: auto;
+        scrollbar-width: thin;
+
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, .18);
+            border-radius: 3px;
+        }
     }
 
     .tour-launcher-menu__item {
-        display: block;
+        display: flex;
+        align-items: center;
+        gap: 10px;
         width: 100%;
-        padding: 8px 16px;
+        padding: 8px 10px;
         border: none;
+        border-radius: 8px;
         background: none;
         text-align: start;
         font-size: 14px;
         color: vars.$black;
         cursor: pointer;
+        transition: background-color .12s ease, transform .12s ease;
+
+        .tour-launcher-menu__item-badge {
+            display: flex;
+            flex-shrink: 0;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            font-size: 12px;
+            color: var(--bs-primary, #206b82);
+            background-color: rgba(var(--bs-primary-rgb, 32, 107, 130), .12);
+            transition: background-color .12s ease, transform .12s ease;
+        }
+
+        .tour-launcher-menu__item-label {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
 
         &:hover,
+        &:focus-visible {
+            background-color: rgba(var(--bs-primary-rgb, 32, 107, 130), .1);
+            transform: translateX(3px);
+
+            .tour-launcher-menu__item-badge {
+                background-color: var(--bs-primary, #206b82);
+                color: vars.$white;
+                transform: scale(1.08);
+            }
+        }
+
+        &:focus-visible {
+            outline: 2px solid var(--bs-primary, #206b82);
+            outline-offset: -2px;
+        }
+
         &:focus {
-            background-color: #f0f0f0;
             outline: none;
         }
+    }
+}
+
+@keyframes tour-launcher-menu-item-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -398,15 +537,36 @@ html[data-theme="dark"] {
     }
 
     .tour-launcher-menu {
-        background: var(--dm-surface);
+        background-color: var(--dm-surface);
         border: 1px solid var(--dm-border);
+
+        @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+            background-color: rgba(20, 27, 45, .78);
+        }
+
+        .tour-launcher-menu__header {
+            color: var(--dm-text-muted);
+            border-bottom-color: var(--dm-border);
+        }
+
+        .tour-launcher-menu__list::-webkit-scrollbar-thumb {
+            background: var(--dm-border);
+        }
 
         .tour-launcher-menu__item {
             color: var(--dm-text);
 
-            &:hover,
-            &:focus {
+            .tour-launcher-menu__item-badge {
                 background-color: var(--dm-surface-alt);
+            }
+
+            &:hover,
+            &:focus-visible {
+                background-color: var(--dm-surface-alt);
+
+                .tour-launcher-menu__item-badge {
+                    background-color: var(--bs-primary, #206b82);
+                }
             }
         }
     }

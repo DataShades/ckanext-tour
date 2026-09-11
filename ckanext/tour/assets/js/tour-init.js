@@ -99,7 +99,10 @@ this.ckan.module('tour-init', function (jQuery) {
                 this.launcher.attr("aria-haspopup", "true");
                 this.launcher.attr("aria-expanded", "false");
                 this.menu = this._renderMenu();
+                this.menuItems = this.menu.find(".tour-launcher-menu__item");
                 this.launcher.on("click", this._toggleMenu);
+                this.launcher.on("keydown", this._onLauncherKeydown);
+                this.menu.on("keydown", this._onMenuKeydown);
                 $(document).on("click", this._closeMenuOnOutsideClick);
             }
 
@@ -112,55 +115,118 @@ this.ckan.module('tour-init', function (jQuery) {
 
         _renderMenu: function () {
             var self = this;
+            var position = this.options.config.launcher_position === "bottom-left"
+                ? "tour-launcher-menu--bottom-left"
+                : "tour-launcher-menu--bottom-right";
 
-            var menu = $("<ul />", {
-                "class": "tour-launcher-menu " + (
-                    this.options.config.launcher_position === "bottom-left"
-                        ? "tour-launcher-menu--bottom-left"
-                        : "tour-launcher-menu--bottom-right"
-                ),
-                role: "menu"
-            }).hide();
+            var menu = $("<div />", { "class": "tour-launcher-menu " + position });
+
+            $("<div />", { "class": "tour-launcher-menu__header", text: this._("Start a tour") })
+                .appendTo(menu);
+
+            var list = $("<ul />", { "class": "tour-launcher-menu__list", role: "menu" }).appendTo(menu);
 
             this.tours.forEach(function (tour) {
                 var item = $("<li />", { role: "none" });
                 var link = $("<button />", {
                     type: "button",
                     role: "menuitem",
-                    text: tour.title || self._("Untitled tour"),
                     "class": "tour-launcher-menu__item",
                 });
 
+                $("<span />", { "class": "tour-launcher-menu__item-badge" })
+                    .append('<i class="fa fa-route" aria-hidden="true"></i>')
+                    .appendTo(link);
+
+                $("<span />", {
+                    "class": "tour-launcher-menu__item-label",
+                    text: tour.title || self._("Untitled tour"),
+                }).appendTo(link);
+
                 link.on("click", function () {
                     self._hideMenu();
+                    self.launcher.trigger("focus");
                     self._startTour(tour);
                 });
 
                 item.append(link);
-                menu.append(item);
+                list.append(item);
             });
 
             return menu;
         },
 
         _toggleMenu: function () {
-            if (this.menu.is(":visible")) {
+            if (this.menu.hasClass("tour-launcher-menu--open")) {
                 this._hideMenu();
             } else {
-                this.menu.show();
-                this.launcher.attr("aria-expanded", "true");
+                this._showMenu();
             }
+        },
+
+        _showMenu: function () {
+            this.menu.addClass("tour-launcher-menu--open");
+            this.launcher.addClass("tour-launcher--active");
+            this.launcher.attr("aria-expanded", "true");
         },
 
         _hideMenu: function () {
             if (this.menu) {
-                this.menu.hide();
+                this.menu.removeClass("tour-launcher-menu--open");
+                this.launcher.removeClass("tour-launcher--active");
                 this.launcher.attr("aria-expanded", "false");
             }
         },
 
+        _onLauncherKeydown: function (e) {
+            if (e.key !== "ArrowDown" && e.key !== "ArrowUp") {
+                return;
+            }
+
+            e.preventDefault();
+            this._showMenu();
+            this._focusMenuItem(e.key === "ArrowDown" ? 0 : this.menuItems.length - 1);
+        },
+
+        _onMenuKeydown: function (e) {
+            var current = this.menuItems.index(document.activeElement);
+
+            switch (e.key) {
+                case "ArrowDown":
+                    e.preventDefault();
+                    this._focusMenuItem((current + 1) % this.menuItems.length);
+                    break;
+                case "ArrowUp":
+                    e.preventDefault();
+                    this._focusMenuItem((current - 1 + this.menuItems.length) % this.menuItems.length);
+                    break;
+                case "Home":
+                    e.preventDefault();
+                    this._focusMenuItem(0);
+                    break;
+                case "End":
+                    e.preventDefault();
+                    this._focusMenuItem(this.menuItems.length - 1);
+                    break;
+                case "Escape":
+                    e.preventDefault();
+                    this._hideMenu();
+                    this.launcher.trigger("focus");
+                    break;
+                case "Tab":
+                    // a menu button's popup isn't in the normal tab order --
+                    // Tab out of it closes the menu rather than wandering in
+                    this._hideMenu();
+                    break;
+            }
+        },
+
+        _focusMenuItem: function (index) {
+            this.menuItems.eq(index).trigger("focus");
+        },
+
         _closeMenuOnOutsideClick: function (e) {
-            if (!this.menu?.is(":visible")) {
+            if (!this.menu?.hasClass("tour-launcher-menu--open")) {
                 return;
             }
 
