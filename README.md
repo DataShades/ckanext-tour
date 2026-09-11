@@ -94,6 +94,7 @@ ckan.files.storage.tour_image.location_transformers = uuid4_with_extension
 
 ckan.files.storage.tour_link.type = files:link
 ckan.files.storage.tour_link.timeout = 5
+ckan.files.storage.tour_link.protocols = https
 ```
 
 ## Config settings
