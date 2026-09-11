@@ -12,7 +12,7 @@ from ckanext.tour.views.tour_delete import TourDeleteView, TourStepDeleteView
 from ckanext.tour.views.tour_preview import TourPreviewView
 from ckanext.tour.views.tour_update import TourUpdateView
 
-tour = Blueprint("tour", __name__, url_prefix="/admin_panel/config/tour")
+tour = Blueprint("tour", __name__, url_prefix="/ckan-admin/tour")
 tour.before_request(before_request)
 
 tour.add_url_rule("/new", view_func=TourAddView.as_view("add"))

@@ -17,9 +17,10 @@ ckan.module("tour-steps", function ($) {
             document.body.addEventListener('htmx:afterSwap', function (e) {
                 let requestPath = e.detail.pathInfo.requestPath;
 
-                if (requestPath === "/admin_panel/config/tour/add_step") {
+                if (requestPath.endsWith("/add_step")) {
                     self._toggleRemoveBtns();
                     self._updateStepsIndexes();
+                    self._initStepModules(e.detail.elt);
                 }
             });
 
@@ -96,6 +97,28 @@ ckan.module("tour-steps", function ($) {
         _toggleRemoveBtns: function () {
             var steps = $(".tour-steps__steps .tour-accordion");
             $(".remove-step").toggleClass("disabled", steps.length == 1)
+        },
+
+        /**
+         * Initialize data-module elements inside a step just added
+         * over htmx, plus anything main.js otherwise only wires up once,
+         * on page load -- Bootstrap popovers being the one this form uses.
+         */
+        _initStepModules: function (elt) {
+            if (!elt || !elt.querySelectorAll) {
+                return;
+            }
+
+            elt.querySelectorAll("[data-module]").forEach(function (node) {
+                if (!node.getAttribute("dm-initialized")) {
+                    ckan.module.initializeElement(node);
+                    node.setAttribute("dm-initialized", true);
+                }
+            });
+
+            if ($.fn.popover !== undefined) {
+                $(elt).find('[data-bs-toggle="popover"]').popover();
+            }
         },
 
         /**

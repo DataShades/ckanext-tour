@@ -49,8 +49,8 @@
 
                     {{ translated_input(ns ~ "[title]", label=_("Tour title"), value=step.step_title or step.title, error=errors.title, required=true) }}
 
-                    {% call form.input(ns ~ "[element]", label=_("HTML element query"), value=step.step_element or step.element, error=errors.element, attrs={'required': 1, 'class': 'form-control'}) %}
-                        {{ form.info(_('Example: .dataset-list or #map')) }}
+                    {% call form.input(ns ~ "[element]", label=_("Target element"), value=step.step_element or step.element, error=errors.element, attrs={'required': 1, 'class': 'form-control'}) %}
+                        {{ form.info(_('A CSS selector for the page element this step points at and highlights, e.g. ".dataset-list" or "#map". Right-click the element in your browser and "Inspect" to find one — if nothing on the page matches it, the step still shows, just centered and pointing at nothing.')) }}
                     {% endcall %}
 
                     {{ translated_markdown(ns ~ "[intro]", label=_("Intro"), value=step.step_intro or step.intro, error=errors.intro) }}
