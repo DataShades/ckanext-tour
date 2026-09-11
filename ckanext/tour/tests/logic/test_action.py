@@ -52,6 +52,21 @@ class TestTourCreate:
         assert tour["endpoint"] == "dataset.read"
         assert tour["auto_start"] is True
 
+    def test_step_indexes_match_submitted_order(self, sysadmin):
+        tour = call_action(
+            "tour_create",
+            title="t",
+            author_id=sysadmin["id"],
+            steps=[
+                {"title": "s1", "element": ".a", "intro": "i"},
+                {"title": "s2", "element": ".b", "intro": "i"},
+                {"title": "s3", "element": ".c", "intro": "i"},
+            ],
+        )
+
+        assert [s["title"] for s in tour["steps"]] == [{"en": "s1"}, {"en": "s2"}, {"en": "s3"}]
+        assert [s["index"] for s in tour["steps"]] == [1, 2, 3]
+
     def test_step_error_is_namespaced_under_steps(self, sysadmin):
         """A step failure inside the action body must come back as
         ``{"steps": [...]}`` so the form can point at the offending step."""
@@ -295,6 +310,28 @@ class TestTourUpdate:
 
         assert result["steps"][0]["title"] == {"en": "new"}
         assert result["steps"][0]["position"] == "top"
+
+    def test_new_step_inserted_mid_list_keeps_its_submitted_position(self, tour_factory, tour_step_factory):
+        """A step added and dragged between two existing ones must save in
+        that position -- not get appended after them just because
+        tour_step_create always computes next_index() for a brand new row."""
+        tour = tour_factory(steps=[])
+        first = tour_step_factory(tour_id=tour["id"], title="first")
+        second = tour_step_factory(tour_id=tour["id"], title="second")
+
+        result = call_action(
+            "tour_update",
+            id=tour["id"],
+            title="t",
+            steps=[
+                {"id": first["id"], "title": "first", "element": ".a", "intro": "i", "position": "bottom"},
+                {"title": "middle", "element": ".b", "intro": "i", "position": "bottom"},
+                {"id": second["id"], "title": "second", "element": ".c", "intro": "i", "position": "bottom"},
+            ],
+        )
+
+        assert [s["title"] for s in result["steps"]] == [{"en": "first"}, {"en": "middle"}, {"en": "second"}]
+        assert [s["index"] for s in result["steps"]] == [1, 2, 3]
 
     def test_step_missing_from_payload_is_deleted(self, tour_factory, tour_step_factory):
         tour = tour_factory(steps=[])

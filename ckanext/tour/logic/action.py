@@ -116,11 +116,13 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
     steps: list[dict[str, Any]] = data_dict.pop("steps", [])
     tour = Tour.create(data_dict)
 
+    created_ids: list[str] = []
+
     for index, step in enumerate(steps):
         step["tour_id"] = tour.id
 
         try:
-            tk.get_action("tour_step_create")(
+            result = tk.get_action("tour_step_create")(
                 {"ignore_auth": True},
                 step,
             )
@@ -137,6 +139,13 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
                 raise tk.ValidationError(_namespace_step_errors(e.error_dict, index, len(steps))) from e
 
             raise
+
+        created_ids.append(result["id"])
+
+    # tour_step_create always appends (see its own next_index() default);
+    # this is what actually makes the saved order match the submitted one.
+    TourStep.renumber(created_ids)
+    model.Session.commit()
 
     tour.reload_steps()
 
@@ -182,15 +191,20 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
         if step_id not in submitted_ids:
             tk.get_action("tour_step_remove")({"ignore_auth": True}, {"id": step_id})
 
+    step_ids: list[str] = []
+
     for index, step in enumerate(steps):
         action = "tour_step_update" if step.get("id") else "tour_step_create"
         step["tour_id"] = tour.id
 
         try:
-            tk.get_action(action)({"ignore_auth": True}, step)
+            result = tk.get_action(action)({"ignore_auth": True}, step)
         except tk.ValidationError as e:
             raise tk.ValidationError(_namespace_step_errors(e.error_dict, index, len(steps))) from e
 
+        step_ids.append(result["id"])
+
+    TourStep.renumber(step_ids)
     model.Session.commit()
 
     tour.reload_steps()

@@ -12,6 +12,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     Text,
+    bindparam,
     event,
     func,
     select,
@@ -249,6 +250,19 @@ class TourStep(tk.BaseModel):
         stmt = select(func.max(cls.index)).where(cls.tour_id == tour_id)
 
         return (model.Session.scalar(stmt) or 0) + 1
+
+    @classmethod
+    def renumber(cls, ids: list[str]) -> None:
+        """Set each step's ``index`` to its 1-based position in ``ids``."""
+        if not ids:
+            return
+
+        table = cls.__table__
+        stmt = update(table).where(table.c.id == bindparam("step_id")).values(index=bindparam("new_index"))
+        model.Session.execute(
+            stmt,
+            [{"step_id": step_id, "new_index": position} for position, step_id in enumerate(ids, start=1)],
+        )
 
     @property
     def image(self) -> str:
