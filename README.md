@@ -2,40 +2,24 @@
 
 # ckanext-tour
 
-ckanext-tour is a CKAN extension that provides a guided tour feature for CKAN instances. It allows users to create interactive tours to showcase different features and functionalities of a CKAN instance.
+Guided, step-by-step product tours for CKAN, managed from the admin panel.
 
 ![ckanext-tour in action](https://raw.githubusercontent.com/DataShades/ckanext-tour/master/doc/example-1.png)
 
+![ckanext-tour in action](https://raw.githubusercontent.com/DataShades/ckanext-tour/master/doc/example-fab.png)
+
 ## Features
-- Create interactive tours with step-by-step instructions
-- Highlight specific elements on CKAN pages
-- Customize tour appearance and behavior
-- Easily manage and edit tours through the CKAN admin interface
 
-Once the extension is installed and enabled, you can start creating tours through the CKAN admin interface. Each tour is bound to a page by its **Flask endpoint** (for example `dataset.read` covers every dataset page, or pick "Everywhere"), and you can define multiple steps for each tour.
-
-Every page that has one or more tours shows a single floating **Start tour** button. If more than one tour applies, the button opens a short menu of their titles. A tour with **Start automatically** enabled also opens by itself the first time a visitor lands on a matching page; they can replay it from the button afterwards.
-
-Each step contains next information:
-
-- Title: A brief, engaging headline that summarizes the step.
-- Query: CSS selector for the element we're highlighting
-- Intro: Text, that will be displayed on a step card
-- Position: Specifies the placement of step card (top, right, bottom, left).
-- Image (Optional): Visuals to complement the text, illustrate points, or add visual interest. GIF animation could be used here.
-
-### Create Tour
-
-To create a tour for ckanext-tour via the admin panel UI, follow these steps:
-
-- Log in to your CKAN instance as a sysadmin.
-- Navigate to the `Configuration` section in the admin panel toolbar.
-- Find and click the `Add tour` link under the `Tour` section to open the tour creation form.
-- Fill in the required information for the tour.
-  - You can add 1 or more steps for each tour.
-- Once you have added all the information, press `Create tour` button to submit the form and save the tour.
-- Now you can go to the `List of tours` page and see all the tours that were created.
-
+- Interactive, step-by-step tours highlighting specific elements on a page
+- A tour is bound to a specific page (e.g. a dataset page) or shown everywhere
+- One floating **Start tour** button per page; a menu when several tours apply
+- Optional auto-start on a visitor's first matching page load
+- Steps support a title, intro text, tooltip position, and an optional image (upload or URL)
+- Multi-language titles and intros
+- Live preview of an in-progress tour before saving
+- Admin table listing all tours, with search/sort, edit/delete, bulk enable/disable/remove
+- One-click seeding of ready-made default tours for common pages (dataset search, dataset page, organizations, homepage)
+- Active/inactive state to hide a tour without deleting it
 
 ## Requirements
 
