@@ -10,6 +10,7 @@ from ckan.types import Context
 import ckanext.tables.shared as t
 
 from ckanext.tour import i18n
+from ckanext.tour.default_tours import create_default_tours
 from ckanext.tour.model import Tour, TourStep
 
 
@@ -117,6 +118,12 @@ class TourTable(t.TableDefinition):
                     callback=self.table_action_add_tour,
                     with_confirmation=False,
                 ),
+                t.TableActionDefinition(
+                    action="add_default_tours",
+                    label=tk._("Add Default Tours"),
+                    icon="fa fa-magic",
+                    callback=self.table_action_add_default_tours,
+                ),
             ],
         )
 
@@ -136,6 +143,21 @@ class TourTable(t.TableDefinition):
         return t.ActionHandlerResult(
             success=True,
             redirect=tk.url_for("tour.add"),
+        )
+
+    def table_action_add_default_tours(self) -> t.ActionHandlerResult:
+        created = create_default_tours(tk.current_user.id)
+
+        if not created:
+            return t.ActionHandlerResult(success=True, message=tk._("Default tours are already up to date."))
+
+        return t.ActionHandlerResult(
+            success=True,
+            message=tk.ungettext(
+                "Added {count} default tour.",
+                "Added {count} default tours.",
+                len(created),
+            ).format(count=len(created)),
         )
 
     def row_action_edit(self, row: t.Row) -> t.ActionHandlerResult:
