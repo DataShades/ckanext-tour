@@ -21,7 +21,7 @@
         {{ form.info(_("A tour title to explain what is it for")) }}
     {% endcall %}
 
-    {% call form.select("endpoint", label=_("Show on"), selected=data.endpoint or "", error=errors.endpoint, options=h.tour_get_page_options()) %}
+    {% call form.select("endpoint", label=_("Show on"), selected=data.endpoint or "", error=errors.endpoint, options=h.tour_get_page_options(), attrs={'class': 'form-control', 'data-module': 'autocomplete'}) %}
         {{ form.info(_('Which page shows this tour. "Everywhere" adds it to every page; a parametrised route (e.g. dataset.read) covers every page of that type.', classes=['info-help-tight'])) }}
     {% endcall %}
 
@@ -42,6 +42,11 @@
         <p class="mb-2 mb-sm-0 me-auto d-flex align-items-center"><b>{{ _("Tour steps:") }}</b></p>
 
         <button class="btn btn-sm btn-primary" type="submit">{{ _("Create tour") if is_create else _("Update tour") }}</button>
+        <button class="btn btn-sm btn-outline-secondary" type="submit"
+            formaction="{{ h.url_for('tour.preview') }}" formtarget="_blank" formnovalidate>
+            <i class="fa fa-play"></i>
+            {{ _("Preview") }}
+        </button>
         <button class="btn btn-sm btn-outline-secondary btn-collapse-steps" {% if collapse_step %}collapsed=1{% endif %} type="button">
             {{ _("Expand all steps") if collapse_step else _("Collapse all steps") }}
         </button>

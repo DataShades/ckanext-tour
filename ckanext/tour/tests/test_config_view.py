@@ -43,9 +43,7 @@ class TestTourConfigView:
 
         assert resp.status_code == Status.forbidden
 
-    def test_settings_page_forbidden_for_delegated_manager(
-        self, app, user, delegated_tour_manager
-    ):
+    def test_settings_page_forbidden_for_delegated_manager(self, app, user, delegated_tour_manager):
         # passes the blueprint's tour_manage guard, but settings are sysadmin-only
         resp = app.get(
             tk.url_for("tour.config"),
@@ -55,9 +53,7 @@ class TestTourConfigView:
 
         assert resp.status_code == Status.forbidden
 
-    def test_settings_update_forbidden_not_500_for_delegated_manager(
-        self, app, user, delegated_tour_manager
-    ):
+    def test_settings_update_forbidden_not_500_for_delegated_manager(self, app, user, delegated_tour_manager):
         before = config.get_launcher_position()
         target = "bottom-left" if before != "bottom-left" else "bottom-right"
 
@@ -114,9 +110,7 @@ class TestTourListView:
 @pytest.mark.usefixtures("with_plugins", "clean_db")
 class TestTourFormViews:
     def test_add_page_renders(self, app, sysadmin):
-        resp = app.get(
-            tk.url_for("tour.add"), headers={"Authorization": sysadmin["token"]}
-        )
+        resp = app.get(tk.url_for("tour.add"), headers={"Authorization": sysadmin["token"]})
 
         assert resp.status_code == Status.success
 
@@ -244,9 +238,7 @@ class TestTourStepFormSubmission:
     def _context(self, sysadmin) -> types.Context:
         return types.Context(user=sysadmin["name"], ignore_auth=True)
 
-    def test_create_keeps_step_fields_grouped_when_a_step_omits_a_field(
-        self, app, sysadmin
-    ):
+    def test_create_keeps_step_fields_grouped_when_a_step_omits_a_field(self, app, sysadmin):
         data = MultiDict(
             [
                 ("title", "Grouped tour"),
@@ -274,9 +266,7 @@ class TestTourStepFormSubmission:
         assert resp.status_code == Status.redirect
 
         tour = tk.get_action("tour_list")(self._context(sysadmin), {})[0]
-        full = tk.get_action("tour_show")(
-            self._context(sysadmin), {"id": tour["id"]}
-        )
+        full = tk.get_action("tour_show")(self._context(sysadmin), {"id": tour["id"]})
         steps = full["steps"]
 
         assert [s["title"] for s in steps] == ["Step one", "Step two"]
@@ -310,3 +300,59 @@ class TestTourStepDeleteView:
         body = resp.get_data(as_text=True)
         assert "Could not delete step" in body
         assert "no-such-step" in body
+
+
+@pytest.mark.usefixtures("with_plugins", "clean_db", "clean_index")
+class TestTourPreview:
+    def _preview_form(self):
+        return MultiDict(
+            [
+                ("title", "Preview me"),
+                ("endpoint", "dataset.search"),
+                ("step_ids", "s1"),
+                ("step[s1][element]", ".dataset-list"),
+                ("step[s1][intro]", "a preview step"),
+                ("step[s1][position]", "bottom"),
+            ]
+        )
+
+    def test_preview_redirects_to_the_target_page_with_the_flag(self, app, sysadmin):
+        resp = app.post(
+            tk.url_for("tour.preview"),
+            data=self._preview_form(),
+            headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
+        )
+
+        assert resp.status_code == Status.redirect
+        location = resp.headers["location"]
+        assert "/dataset/" in location
+        assert "_tour_preview=session" in location
+
+    def test_preview_tour_is_embedded_on_the_target_page(self, app, sysadmin):
+        app.post(
+            tk.url_for("tour.preview"),
+            data=self._preview_form(),
+            headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
+        )
+
+        # the test client keeps the session cookie set by the preview POST
+        page = app.get(
+            "/dataset/?_tour_preview=session",
+            headers={"Authorization": sysadmin["token"]},
+        )
+
+        body = page.get_data(as_text=True)
+        assert "Preview me" in body
+        assert "a preview step" in body
+
+    def test_preview_is_not_persisted(self, app, sysadmin):
+        app.post(
+            tk.url_for("tour.preview"),
+            data=self._preview_form(),
+            headers={"Authorization": sysadmin["token"]},
+            follow_redirects=False,
+        )
+
+        assert Tour.all() == []

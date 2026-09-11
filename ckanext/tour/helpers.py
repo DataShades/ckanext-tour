@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from typing import Any
 
-from flask import current_app, has_request_context
+from flask import current_app, has_request_context, session
 
 import ckan.plugins.toolkit as tk
 import ckan.plugins as p
@@ -11,22 +11,7 @@ from ckan.model.types import make_uuid
 
 from ckanext.tour import config
 from ckanext.tour.model import Tour, TourStep
-
-IGNORE_BLUEPRINTS = frozenset(
-    {
-        "api",
-        "webassets",
-        "static",
-        "util",
-        "feeds",
-        "debugtoolbar",
-        "tour",
-        "file",
-        "files",
-        "tables"
-    },
-)
-
+from ckanext.tour.utils import PREVIEW_KEY
 
 EVERYWHERE_SUPPRESSED = frozenset(
     {
@@ -77,8 +62,10 @@ def tour_get_page_options() -> list[dict[str, str]]:
     """Options for the "show on" picklist in the tour form.
 
     Built from the app's registered URL rules: every ``GET`` endpoint that is
-    not part of a system blueprint or the API, deduplicated and sorted, with an
-    "Everywhere" entry (stored as an empty string) on top.
+    not part of a system blueprint or the API, and not individually excluded
+    via ``ckanext.tour.ignore_endpoints`` (for a blueprint that should
+    otherwise stay visible), deduplicated and sorted, with an "Everywhere"
+    entry (stored as an empty string) on top.
     """
     seen: dict[str, str] = {}
 
@@ -93,7 +80,10 @@ def tour_get_page_options() -> list[dict[str, str]]:
 
         blueprint = endpoint.split(".", 1)[0] if "." in endpoint else ""
 
-        if blueprint in IGNORE_BLUEPRINTS:
+        if blueprint in config.get_ignore_blueprints():
+            continue
+
+        if endpoint in config.get_ignore_endpoints():
             continue
 
         if rule.rule.startswith("/api/"):
@@ -106,10 +96,7 @@ def tour_get_page_options() -> list[dict[str, str]]:
 
     options = [{"value": "", "text": p.toolkit._("Everywhere")}]
 
-    options.extend(
-        {"value": endpoint, "text": f"{endpoint}  —  {path}"}
-        for endpoint, path in sorted(seen.items())
-    )
+    options.extend({"value": endpoint, "text": f"{endpoint}  —  {path}"} for endpoint, path in sorted(seen.items()))
 
     return options
 
@@ -133,7 +120,67 @@ def tour_get_page_tours() -> list[dict[str, Any]]:
         for step in tour.get("steps", []):
             step["intro"] = tk.h.render_markdown(step.get("intro") or "")
 
+    preview = _preview_tour()
+
+    if preview:
+        payload.append(preview)
+
     return payload
+
+
+def _preview_tour() -> dict[str, Any] | None:
+    """The unsaved tour stashed by the "Preview" button, shaped like a dictized
+    tour so ``tour-init`` can play it. Only served to tour managers, and only
+    when the current URL carries ``?_tour_preview=session``."""
+    if tk.request.args.get(PREVIEW_KEY) != "session":
+        return None
+
+    if not _may_manage_tours():
+        return None
+
+    stashed = session.get(PREVIEW_KEY)
+
+    if not stashed or not stashed.get("steps"):
+        return None
+
+    steps = [
+        {
+            "id": step.get("id") or f"preview-{idx}",
+            "element": step.get("element") or "",
+            "position": step.get("position") or TourStep.Position.bottom,
+            "title": step.get("title") or "",
+            "intro": tk.h.render_markdown(step.get("intro") or ""),
+            "image_url": _step_image_href(step.get("image_id")),
+        }
+        for idx, step in enumerate(stashed["steps"])
+    ]
+
+    return {
+        "id": "tour-preview",
+        "title": stashed.get("title") or str(tk._("Tour preview")),
+        "auto_start": True,
+        "preview": True,
+        "steps": steps,
+        "modified_at": "",
+    }
+
+
+def _may_manage_tours() -> bool:
+    try:
+        tk.check_access("tour_manage", {"user": tk.current_user.name})
+    except tk.NotAuthorized:
+        return False
+
+    return True
+
+
+def _step_image_href(image_id: str | None) -> str:
+    if not image_id:
+        return ""
+
+    file_info = tk.h.files_link_details(image_id)
+
+    return file_info["href"] if file_info else ""
 
 
 def tour_has_tours() -> bool:

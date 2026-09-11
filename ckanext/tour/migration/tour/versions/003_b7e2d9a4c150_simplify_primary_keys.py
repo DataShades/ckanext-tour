@@ -48,11 +48,7 @@ def upgrade() -> None:
     # tour_step's FK to tour was declared twice (inline column + explicit
     # `tour_step_fk`); keep one
     insp = sa.inspect(op.get_bind())
-    tour_fks = [
-        fk
-        for fk in insp.get_foreign_keys("tour_step")
-        if fk["referred_table"] == "tour"
-    ]
+    tour_fks = [fk for fk in insp.get_foreign_keys("tour_step") if fk["referred_table"] == "tour"]
     for fk in tour_fks[1:]:
         if fk["name"]:
             op.drop_constraint(fk["name"], "tour_step", type_="foreignkey")

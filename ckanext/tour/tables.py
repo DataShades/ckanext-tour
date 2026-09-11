@@ -51,7 +51,7 @@ class TourTable(t.TableDefinition):
                     resizable=False,
                     sortable=False,
                     filterable=False,
-                    tabulator_formatter="html"
+                    tabulator_formatter="html",
                 ),
                 t.ColumnDefinition(
                     field="created_at",

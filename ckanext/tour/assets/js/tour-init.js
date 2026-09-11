@@ -23,13 +23,36 @@ this.ckan.module('tour-init', function (jQuery) {
             this.tours = this.options.config.tours || [];
             this.instances = {};
             this.isMobile = this._isMobile();
+            this.previewTour = this._extractPreviewTour();
 
-            if (!this.tours.length) {
+            if (!this.tours.length && !this.previewTour) {
                 return;
             }
 
-            this._renderLauncher();
-            this._maybeAutoStart();
+            if (this.tours.length) {
+                this._renderLauncher();
+            }
+
+            if (this.previewTour) {
+                this._getInstance(this.previewTour).start();
+            } else {
+                this._maybeAutoStart();
+            }
+        },
+
+        /**
+         * A tour flagged `preview` is an unsaved tour served only to the
+         * admin who hit "Preview" — keep it out of the launcher and play it
+         * straight away, ignoring the "seen" flag and the mobile guard
+        */
+        _extractPreviewTour: function () {
+            for (var i = 0; i < this.tours.length; i++) {
+                if (this.tours[i].preview) {
+                    return this.tours.splice(i, 1)[0];
+                }
+            }
+
+            return null;
         },
 
         _isMobile: function () {
@@ -346,7 +369,7 @@ this.ckan.module('tour-init', function (jQuery) {
                 // `step.intro` is already sanitised HTML, rendered server-side
                 if (step.image_url) {
                     var imageData = $("<img />", { src: step.image_url })[0].outerHTML;
-                    step.text = (step.intro || "") + "<br><br>" + imageData;
+                    step.text = (step.intro || "") + "<br>" + imageData;
                 } else {
                     step.text = step.intro || "";
                 }

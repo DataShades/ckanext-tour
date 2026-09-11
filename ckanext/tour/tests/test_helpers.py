@@ -25,10 +25,7 @@ class TestTourConfigHelpers:
         assert parsed == helpers.tour_get_config()
 
     def test_collapse_steps_matches_config(self):
-        assert (
-            helpers.tour_collapse_steps()
-            is helpers.tour_get_config()["collapse_steps"]
-        )
+        assert helpers.tour_collapse_steps() is helpers.tour_get_config()["collapse_steps"]
 
 
 @pytest.mark.usefixtures("with_plugins")
@@ -62,9 +59,7 @@ class TestFlattenErrors:
         assert rows == [{"label": "Title", "message": "Missing value"}]
 
     def test_step_errors_are_labelled_by_position(self):
-        rows = helpers.tour_flatten_errors(
-            {"steps": [{}, {"element": ["Missing value"], "image": "pick one"}]}
-        )
+        rows = helpers.tour_flatten_errors({"steps": [{}, {"element": ["Missing value"], "image": "pick one"}]})
 
         labels = {row["label"] for row in rows}
 
@@ -72,9 +67,7 @@ class TestFlattenErrors:
         assert {row["message"] for row in rows} == {"Missing value", "pick one"}
 
     def test_mixed_top_level_and_step_errors(self):
-        rows = helpers.tour_flatten_errors(
-            {"title": ["Missing value"], "steps": [{"element": ["Missing value"]}]}
-        )
+        rows = helpers.tour_flatten_errors({"title": ["Missing value"], "steps": [{"element": ["Missing value"]}]})
 
         assert {"label": "Title", "message": "Missing value"} in rows
         assert {"label": "Step 1 — element", "message": "Missing value"} in rows

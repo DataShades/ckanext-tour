@@ -98,17 +98,8 @@ ckan.files.storage.tour_link.timeout = 5
 
 ## Config settings
 
-```ini
-# Where the floating "Start tour" button sits on pages that have a tour:
-# bottom-right (default) or bottom-left
-ckanext.tour.launcher_position = bottom-right
-
-# Collapse tour steps on the edit/create form (default: true)
-ckanext.tour.collapse_steps = true
-```
-
-These options are runtime-editable and can also be changed from the tour
-**Settings** page.
+See the available config options in [`config_declaration.yaml`](ckanext/tour/config_declaration.yaml).
+Options marked `editable: true` there can also be changed from the tour **Settings** page.
 
 ## Tests
 

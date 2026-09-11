@@ -272,7 +272,5 @@ def _bump_tour_modified_at(
         return
 
     connection.execute(
-        update(Tour)
-        .where(Tour.id == target.tour_id)
-        .values(modified_at=utcnow()),
+        update(Tour).where(Tour.id == target.tour_id).values(modified_at=utcnow()),
     )

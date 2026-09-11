@@ -15,6 +15,8 @@ from ckanext.files.shared import make_upload
 from ckanext.tour.logic import schema
 from ckanext.tour.model import Tour, TourStep, utcnow
 
+_MANAGER_ONLY_FIELDS = ("author_id",)
+
 
 def _delete_files(*file_ids: str | None) -> None:
     """Best-effort removal of ``files`` records left behind by a step image."""
@@ -24,12 +26,8 @@ def _delete_files(*file_ids: str | None) -> None:
         with contextlib.suppress(tk.ObjectNotFound, tk.ValidationError):
             tk.get_action("files_file_delete")({"ignore_auth": True}, {"id": file_id})
 
-_MANAGER_ONLY_FIELDS = ("author_id",)
 
-
-def _namespace_step_errors(
-    error_dict: dict[str, Any], index: int, total: int
-) -> dict[str, Any]:
+def _namespace_step_errors(error_dict: dict[str, Any], index: int, total: int) -> dict[str, Any]:
     """Re-shape a single step's error dict into the ``{"steps": [...]}`` list the
     tour form expects.
 
@@ -132,9 +130,7 @@ def tour_create(context: types.Context, data_dict: types.DataDict) -> dict[str, 
                 {"id": tour.id},
             )
 
-            raise tk.ValidationError(
-                _namespace_step_errors(e.error_dict, index, len(steps))
-            ) from e
+            raise tk.ValidationError(_namespace_step_errors(e.error_dict, index, len(steps))) from e
 
     tour.reload_steps()
 
@@ -187,9 +183,7 @@ def tour_update(context: types.Context, data_dict: types.DataDict) -> dict[str, 
         try:
             tk.get_action(action)({"ignore_auth": True}, step)
         except tk.ValidationError as e:
-            raise tk.ValidationError(
-                _namespace_step_errors(e.error_dict, index, len(steps))
-            ) from e
+            raise tk.ValidationError(_namespace_step_errors(e.error_dict, index, len(steps))) from e
 
     model.Session.commit()
 

@@ -107,9 +107,7 @@ class TestTourStepCreate:
         tour = tour_factory(steps=[])
 
         with pytest.raises(tk.ValidationError, match="cannot contain"):
-            tour_step_factory(
-                tour_id=tour["id"], element="<img src=x onerror=alert(1)>"
-            )
+            tour_step_factory(tour_id=tour["id"], element="<img src=x onerror=alert(1)>")
 
     def test_error_on_child_should_clear_parent(self, sysadmin):
         """Test error on creating step should not create the tour.
@@ -276,9 +274,7 @@ class TestTourUpdate:
         assert result["steps"][0]["title"] == "new"
         assert result["steps"][0]["position"] == "top"
 
-    def test_step_missing_from_payload_is_deleted(
-        self, tour_factory, tour_step_factory
-    ):
+    def test_step_missing_from_payload_is_deleted(self, tour_factory, tour_step_factory):
         tour = tour_factory(steps=[])
         keep = tour_step_factory(tour_id=tour["id"], title="keep")
         drop = tour_step_factory(tour_id=tour["id"], title="drop")
@@ -301,9 +297,7 @@ class TestTourUpdate:
         assert [s["id"] for s in result["steps"]] == [keep["id"]]
         assert tour_model.TourStep.get(drop["id"]) is None
 
-    def test_empty_steps_payload_clears_all_steps(
-        self, tour_factory, tour_step_factory
-    ):
+    def test_empty_steps_payload_clears_all_steps(self, tour_factory, tour_step_factory):
         tour = tour_factory(steps=[])
         tour_step_factory(tour_id=tour["id"])
         tour_step_factory(tour_id=tour["id"])
@@ -346,9 +340,7 @@ class TestTourUpdate:
 
 @pytest.mark.usefixtures("with_plugins", "clean_db", "mock_storage")
 class TestTourRemove:
-    def test_remove_deletes_the_tour_and_its_steps(
-        self, tour_factory, tour_step_factory
-    ):
+    def test_remove_deletes_the_tour_and_its_steps(self, tour_factory, tour_step_factory):
         tour = tour_factory(steps=[])
         tour_step_factory(tour_id=tour["id"])
         tour_step_factory(tour_id=tour["id"])
@@ -388,15 +380,11 @@ class TestTourStepUpdate:
         shown = call_action("tour_show", id=tour["id"])
         assert shown["steps"][0]["title"] == "new"
 
-    def test_partial_update_keeps_omitted_optional_fields(
-        self, tour_factory, tour_step_factory
-    ):
+    def test_partial_update_keeps_omitted_optional_fields(self, tour_factory, tour_step_factory):
         """`title` / `intro` are `ignore_missing`; omitting them must keep the
         stored value, not raise a KeyError."""
         tour = tour_factory(steps=[])
-        step = tour_step_factory(
-            tour_id=tour["id"], title="keep-title", intro="keep-intro"
-        )
+        step = tour_step_factory(tour_id=tour["id"], title="keep-title", intro="keep-intro")
 
         call_action("tour_step_update", id=step["id"], element=".changed")
 
@@ -558,9 +546,7 @@ class TestTourVisibility:
     def test_show_inactive_tour_visible_to_manager(self, tour_factory, sysadmin):
         tour = tour_factory(steps=[], state=tour_model.Tour.State.inactive)
 
-        result = call_action(
-            "tour_show", context=self._manager(sysadmin), id=tour["id"]
-        )
+        result = call_action("tour_show", context=self._manager(sysadmin), id=tour["id"])
 
         assert result["id"] == tour["id"]
         assert result["author_id"]

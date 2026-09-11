@@ -8,6 +8,7 @@ import ckan.plugins.toolkit as tk
 
 
 _STEP_FIELD_RE = re.compile(r"^step\[(?P<sid>[^\[\]]+)\]\[(?P<field>[^\[\]]+)\]$")
+PREVIEW_KEY = "_tour_preview"
 
 
 def before_request() -> None:

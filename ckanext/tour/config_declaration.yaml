@@ -14,3 +14,21 @@ groups:
           Where the floating "Start tour" button is anchored on pages that have
           a tour. One of "bottom-right" or "bottom-left".
         editable: true
+
+      - key: ckanext.tour.ignore_blueprints
+        type: list
+        default: api webassets static util feeds debugtoolbar tour file files tables
+        description: >-
+          Blueprint names excluded from the "show on" page picklist in the
+          tour form. Overrides the full default list, so a site customizing
+          this should repeat the built-in names it still wants excluded.
+
+      - key: ckanext.tour.ignore_endpoints
+        type: list
+        default: home.robots_txt home.redirect_locale
+        description: >-
+          Individual endpoint names (``blueprint.view``) excluded from the
+          "show on" page picklist in the tour form, for endpoints whose
+          blueprint should otherwise stay visible. Overrides the full default
+          list, so a site customizing this should repeat the built-in names
+          it still wants excluded.
